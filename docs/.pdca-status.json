@@ -1,0 +1,459 @@
+{
+  "version": "2.0",
+  "lastUpdated": "2026-02-04T15:38:46.204Z",
+  "activeFeatures": [
+    "create-ad-test",
+    "db",
+    "ai",
+    "storage",
+    "campaigns",
+    "[id]",
+    "analyze",
+    "concepts",
+    "select",
+    "generate",
+    "stores",
+    "campaign",
+    "analysis",
+    "concept",
+    "creative",
+    "create",
+    "download",
+    "layout"
+  ],
+  "primaryFeature": "create-ad-test",
+  "features": {
+    "create-ad-test": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:24:04.156Z",
+        "lastUpdated": "2026-02-04T15:38:46.204Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\hooks\\useCreatives.ts"
+    },
+    "db": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:24:33.776Z",
+        "lastUpdated": "2026-02-04T15:24:52.204Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\lib\\db\\queries.ts"
+    },
+    "ai": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:25:22.852Z",
+        "lastUpdated": "2026-02-04T15:31:29.224Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\lib\\ai\\nano-banana.ts"
+    },
+    "storage": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:25:51.340Z",
+        "lastUpdated": "2026-02-04T15:25:51.340Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\lib\\storage\\r2.ts"
+    },
+    "campaigns": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:26:08.660Z",
+        "lastUpdated": "2026-02-04T15:30:16.188Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\app\\api\\campaigns\\route.ts"
+    },
+    "[id]": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:26:16.014Z",
+        "lastUpdated": "2026-02-04T15:26:16.014Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\app\\api\\campaigns\\[id]\\route.ts"
+    },
+    "analyze": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:26:27.357Z",
+        "lastUpdated": "2026-02-04T15:26:27.357Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\app\\api\\campaigns\\[id]\\analyze\\route.ts"
+    },
+    "concepts": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:26:40.154Z",
+        "lastUpdated": "2026-02-04T15:26:40.154Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\app\\api\\campaigns\\[id]\\concepts\\route.ts"
+    },
+    "select": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:26:47.261Z",
+        "lastUpdated": "2026-02-04T15:26:47.261Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\app\\api\\concepts\\[id]\\select\\route.ts"
+    },
+    "generate": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:27:07.281Z",
+        "lastUpdated": "2026-02-04T15:30:41.918Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\app\\api\\concepts\\[id]\\generate\\route.ts"
+    },
+    "stores": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:27:25.643Z",
+        "lastUpdated": "2026-02-04T15:27:25.643Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\stores\\campaign-store.ts"
+    },
+    "campaign": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:27:46.429Z",
+        "lastUpdated": "2026-02-04T15:27:46.429Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\components\\campaign\\CampaignForm.tsx"
+    },
+    "analysis": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:28:04.100Z",
+        "lastUpdated": "2026-02-04T15:37:39.893Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\components\\analysis\\PersonaCard.tsx"
+    },
+    "concept": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:28:18.392Z",
+        "lastUpdated": "2026-02-04T15:37:52.840Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\components\\concept\\ConceptCard.tsx"
+    },
+    "creative": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:28:39.691Z",
+        "lastUpdated": "2026-02-04T15:38:02.353Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\components\\creative\\ImagePreview.tsx"
+    },
+    "create": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:29:44.861Z",
+        "lastUpdated": "2026-02-04T15:29:44.861Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\app\\create\\page.tsx"
+    },
+    "download": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:37:27.814Z",
+        "lastUpdated": "2026-02-04T15:37:27.814Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\app\\api\\creatives\\[id]\\download\\route.ts"
+    },
+    "layout": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-04T15:38:11.098Z",
+        "lastUpdated": "2026-02-04T15:38:19.601Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\create-ad-test\\src\\components\\layout\\Footer.tsx"
+    }
+  },
+  "pipeline": {
+    "currentPhase": 1,
+    "level": "Dynamic",
+    "phaseHistory": []
+  },
+  "session": {
+    "startedAt": "2026-02-04T15:05:23.148Z",
+    "onboardingCompleted": false,
+    "lastActivity": "2026-02-04T15:38:46.204Z"
+  },
+  "history": [
+    {
+      "timestamp": "2026-02-04T15:24:04.156Z",
+      "feature": "create-ad-test",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:24:33.776Z",
+      "feature": "db",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:24:52.204Z",
+      "feature": "db",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:25:22.852Z",
+      "feature": "ai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:25:43.026Z",
+      "feature": "ai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:25:51.340Z",
+      "feature": "storage",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:26:08.660Z",
+      "feature": "campaigns",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:26:16.014Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:26:27.357Z",
+      "feature": "analyze",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:26:40.154Z",
+      "feature": "concepts",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:26:47.261Z",
+      "feature": "select",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:27:07.281Z",
+      "feature": "generate",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:27:25.643Z",
+      "feature": "stores",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:27:46.429Z",
+      "feature": "campaign",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:28:04.100Z",
+      "feature": "analysis",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:28:18.392Z",
+      "feature": "concept",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:28:39.691Z",
+      "feature": "creative",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:29:04.853Z",
+      "feature": "create-ad-test",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:29:44.861Z",
+      "feature": "create",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:30:16.188Z",
+      "feature": "campaigns",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:30:41.919Z",
+      "feature": "generate",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:31:08.991Z",
+      "feature": "create-ad-test",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:31:29.224Z",
+      "feature": "ai",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:37:27.814Z",
+      "feature": "download",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:37:39.893Z",
+      "feature": "analysis",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:37:52.840Z",
+      "feature": "concept",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:38:02.353Z",
+      "feature": "creative",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:38:11.098Z",
+      "feature": "layout",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:38:19.601Z",
+      "feature": "layout",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:38:32.868Z",
+      "feature": "create-ad-test",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-04T15:38:46.204Z",
+      "feature": "create-ad-test",
+      "phase": "do",
+      "action": "updated"
+    }
+  ]
+}
