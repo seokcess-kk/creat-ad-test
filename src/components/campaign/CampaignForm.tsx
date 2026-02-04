@@ -157,7 +157,6 @@ export function CampaignForm({ onSubmit }: CampaignFormProps) {
                 >
                   <Checkbox
                     checked={formData.platforms.includes(key)}
-                    onCheckedChange={() => togglePlatform(key)}
                   />
                   <span>{name}</span>
                 </div>
