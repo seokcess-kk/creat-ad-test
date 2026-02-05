@@ -6,11 +6,11 @@
     "level": "Enterprise"
   },
   "pdca": {
-    "feature": "create-ad-test",
-    "phase": "completed",
-    "matchRate": 93,
-    "iteration": 2,
-    "updatedAt": "2026-02-06T10:00:00.000Z"
+    "feature": "export-api",
+    "phase": "design",
+    "matchRate": 0,
+    "iteration": 0,
+    "updatedAt": "2026-02-06T11:30:00.000Z"
   },
   "completedFeatures": [
     {
