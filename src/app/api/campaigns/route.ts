@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { getCampaigns, createCampaign } from '@/lib/db/queries';
 import { getUserIdOrDemo } from '@/lib/auth/session';
+import { withLogging, successResponse, errorResponse } from '@/lib/api-utils';
 
 const createCampaignSchema = z.object({
   brand_name: z.string().min(1, '브랜드명을 입력해주세요'),
@@ -23,61 +24,47 @@ const createCampaignSchema = z.object({
 });
 
 // GET /api/campaigns - 캠페인 목록 조회
-export async function GET() {
+export const GET = withLogging(async (_request, { log, requestId }) => {
   try {
-    // Get authenticated user ID or demo user for development
     const userId = await getUserIdOrDemo();
-    const campaigns = await getCampaigns(userId);
+    log.info('Fetching campaigns', { userId });
 
-    return NextResponse.json({
-      success: true,
-      data: campaigns,
-    });
+    const campaigns = await getCampaigns(userId);
+    log.info('Campaigns fetched', { count: campaigns.length });
+
+    return successResponse({ success: true, data: campaigns }, requestId);
   } catch (error) {
-    console.error('Get campaigns error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: '캠페인 목록을 가져오는데 실패했습니다',
-      },
-      { status: 500 }
-    );
+    log.error('Get campaigns error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    return errorResponse('캠페인 목록을 가져오는데 실패했습니다', requestId, 500);
   }
-}
+});
 
 // POST /api/campaigns - 캠페인 생성
-export async function POST(request: NextRequest) {
+export const POST = withLogging(async (request: NextRequest, { log, requestId }) => {
   try {
     const body = await request.json();
+    log.info('Creating campaign', { brand_name: body.brand_name });
+
     const validatedData = createCampaignSchema.parse(body);
 
-    // Get authenticated user ID or demo user for development
     const userId = await getUserIdOrDemo();
+    log.info('User authenticated', { userId });
 
     const campaign = await createCampaign(userId, validatedData);
+    log.info('Campaign created', { campaignId: campaign.id });
 
-    return NextResponse.json({
-      success: true,
-      data: campaign,
-    });
+    return successResponse({ success: true, data: campaign }, requestId);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: error.issues[0].message,
-        },
-        { status: 400 }
-      );
+      log.warning('Validation error', { issues: error.issues });
+      return errorResponse(error.issues[0].message, requestId, 400);
     }
 
-    console.error('Create campaign error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: '캠페인 생성에 실패했습니다',
-      },
-      { status: 500 }
-    );
+    log.error('Create campaign error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    return errorResponse('캠페인 생성에 실패했습니다', requestId, 500);
   }
-}
+});

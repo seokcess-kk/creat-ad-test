@@ -1,38 +1,41 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { getCampaignById, updateCampaignStatus, createAnalysis, getAnalysisByCampaignId } from '@/lib/db/queries';
 import { claude } from '@/lib/ai/claude';
+import { withLogging, successResponse, errorResponse } from '@/lib/api-utils';
 
 // POST /api/campaigns/:id/analyze - 캠페인 분석 실행
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const POST = withLogging(async (_request, { log, requestId, params }) => {
   try {
-    const { id } = await params;
+    const id = params?.id;
+    if (!id) {
+      return errorResponse('캠페인 ID가 필요합니다', requestId, 400);
+    }
+
+    log.info('Starting campaign analysis', { campaignId: id });
 
     // 캠페인 조회
     const campaign = await getCampaignById(id);
     if (!campaign) {
-      return NextResponse.json(
-        { success: false, error: '캠페인을 찾을 수 없습니다' },
-        { status: 404 }
-      );
+      log.warning('Campaign not found', { campaignId: id });
+      return errorResponse('캠페인을 찾을 수 없습니다', requestId, 404);
     }
 
     // 이미 분석이 있는지 확인
     const existingAnalysis = await getAnalysisByCampaignId(id);
     if (existingAnalysis) {
-      return NextResponse.json({
+      log.info('Returning existing analysis', { campaignId: id, analysisId: existingAnalysis.id });
+      return successResponse({
         success: true,
         data: existingAnalysis,
         message: '기존 분석 결과를 반환합니다',
-      });
+      }, requestId);
     }
 
     // 상태 업데이트
     await updateCampaignStatus(id, 'analyzing');
+    log.info('Campaign status updated', { campaignId: id, status: 'analyzing' });
 
     // Claude API로 분석 실행
+    log.info('Calling Claude API for analysis', { campaignId: id });
     const analysisResult = await claude.analyzeMarket({
       brandName: campaign.brand_name,
       productDescription: campaign.product_description,
@@ -40,25 +43,26 @@ export async function POST(
       targetAudience: campaign.target_audience,
       platforms: campaign.platforms,
     });
+    log.info('Claude analysis completed', { campaignId: id });
 
     // 분석 결과 저장
     const analysis = await createAnalysis(id, analysisResult);
+    log.info('Analysis saved', { campaignId: id, analysisId: analysis.id });
 
     // 상태 업데이트
     await updateCampaignStatus(id, 'planning');
+    log.info('Campaign status updated', { campaignId: id, status: 'planning' });
 
-    return NextResponse.json({
-      success: true,
-      data: analysis,
-    });
+    return successResponse({ success: true, data: analysis }, requestId);
   } catch (error) {
-    console.error('Analyze campaign error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: `분석 실행에 실패했습니다: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      },
-      { status: 500 }
+    log.error('Analyze campaign error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    return errorResponse(
+      `분석 실행에 실패했습니다: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      requestId,
+      500
     );
   }
-}
+});

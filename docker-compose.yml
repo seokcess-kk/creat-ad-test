@@ -1,0 +1,58 @@
+# Zero Script QA - Docker Compose Configuration
+# Usage:
+#   docker compose up -d        # Start services
+#   docker compose logs -f      # Stream all logs
+#   docker compose logs -f web  # Stream web logs only
+
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - SERVICE_NAME=web
+      # Add your API keys here or use .env file
+      # - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      # - GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY}
+      # - SUPABASE_URL=${SUPABASE_URL}
+      # - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+    env_file:
+      - .env.local
+    volumes:
+      # Hot reload for development
+      - ./src:/app/src:ro
+      - ./public:/app/public:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: Add nginx for production-like setup
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     - web
+  #   logging:
+  #     driver: json-file
+  #     options:
+  #       max-size: "10m"
+  #       max-file: "3"
+
+networks:
+  default:
+    name: creat-ad-network
