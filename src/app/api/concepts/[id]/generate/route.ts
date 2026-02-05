@@ -1,10 +1,11 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { createCreatives, getConceptById, updateCampaignStatus } from '@/lib/db/queries';
+import { createCreatives, getConceptById, updateCampaignStatus, getAnalysisByCampaignId } from '@/lib/db/queries';
 import { nanoBanana } from '@/lib/ai/nano-banana';
 import { claude } from '@/lib/ai/claude';
 import { withLogging, successResponse, errorResponse } from '@/lib/api-utils';
 import type { Platform, Creative } from '@/types/database';
+import type { DeepAnalysis } from '@/types/ai-advanced';
 
 const generateSchema = z.object({
   platforms: z
@@ -22,9 +23,14 @@ const generateSchema = z.object({
   include_copy: z.boolean().default(true),
   resolution: z.enum(['2k', '4k']).default('2k'),
   variations: z.number().min(1).max(4).default(2),
+  optimized_copy: z.boolean().default(false), // 플랫폼 최적화 카피 사용
+  validate_quality: z.boolean().default(false), // 품질 검증 수행
 });
 
 // POST /api/concepts/:id/generate - 소재 생성
+// Body params:
+//   - optimized_copy: true일 경우 플랫폼 특성이 완전히 반영된 최적화 카피 생성
+//   - validate_quality: true일 경우 생성된 카피의 품질 검증 수행
 export const POST = withLogging(async (request: NextRequest, { log, requestId, params }) => {
   try {
     const conceptId = params?.id;
@@ -33,7 +39,8 @@ export const POST = withLogging(async (request: NextRequest, { log, requestId, p
     }
 
     const body = await request.json();
-    const { platforms, include_copy, resolution, variations } = generateSchema.parse(body);
+    const { platforms, include_copy, resolution, variations, optimized_copy, validate_quality } =
+      generateSchema.parse(body);
 
     log.info('Starting creative generation', {
       conceptId,
@@ -41,6 +48,8 @@ export const POST = withLogging(async (request: NextRequest, { log, requestId, p
       resolution,
       variations,
       include_copy,
+      optimized_copy,
+      validate_quality,
     });
 
     // 컨셉 조회
@@ -62,7 +71,21 @@ export const POST = withLogging(async (request: NextRequest, { log, requestId, p
       brandName: campaign.brand_name,
     });
 
+    // 심층 분석 데이터 조회 (최적화 카피 생성 시 필요)
+    let deepAnalysis: DeepAnalysis | undefined;
+    if (optimized_copy) {
+      const analysis = await getAnalysisByCampaignId(campaign.id);
+      if (analysis) {
+        const analysisData = analysis as unknown as Record<string, unknown>;
+        if (analysisData.industry_analysis) {
+          deepAnalysis = analysis as unknown as DeepAnalysis;
+          log.info('Deep analysis found for optimized copy', { campaignId: campaign.id });
+        }
+      }
+    }
+
     const creatives: Omit<Creative, 'id' | 'concept_id' | 'created_at'>[] = [];
+    const qualityScores: Record<string, unknown>[] = [];
 
     // 각 플랫폼별로 소재 생성
     for (const platform of platforms as Platform[]) {
@@ -114,13 +137,52 @@ Color palette inspiration: ${concept.color_palette.join(', ')}.`;
       // 카피 생성
       if (include_copy) {
         try {
-          log.info('Generating copy', { platform });
-          const copyText = await claude.generateCopy({
-            concept,
-            platform,
-            brandName: campaign.brand_name,
-          });
-          log.info('Copy generated', { platform, length: copyText.length });
+          let copyText: string;
+
+          if (optimized_copy) {
+            // 플랫폼 최적화 카피 생성
+            log.info('Generating OPTIMIZED copy', { platform, hasDeepAnalysis: !!deepAnalysis });
+            copyText = await claude.generateOptimizedCopy(
+              {
+                concept,
+                platform,
+                brandName: campaign.brand_name,
+              },
+              deepAnalysis
+            );
+            log.info('Optimized copy generated', { platform, length: copyText.length });
+
+            // 품질 검증 수행
+            if (validate_quality) {
+              try {
+                log.info('Validating copy quality', { platform });
+                const qualityScore = await claude.validateQuality(copyText, platform, concept);
+                qualityScores.push({
+                  platform,
+                  ...qualityScore,
+                });
+                log.info('Quality validation completed', {
+                  platform,
+                  overallScore: qualityScore.overall_score,
+                  platformFit: qualityScore.platform_fit,
+                });
+              } catch (validateError) {
+                log.warning('Quality validation failed', {
+                  platform,
+                  error: validateError instanceof Error ? validateError.message : 'Unknown error',
+                });
+              }
+            }
+          } else {
+            // 기본 카피 생성
+            log.info('Generating basic copy', { platform });
+            copyText = await claude.generateCopy({
+              concept,
+              platform,
+              brandName: campaign.brand_name,
+            });
+            log.info('Basic copy generated', { platform, length: copyText.length });
+          }
 
           creatives.push({
             type: 'copy',
@@ -130,6 +192,7 @@ Color palette inspiration: ${concept.color_palette.join(', ')}.`;
             resolution: null,
             metadata: {
               model: 'claude-sonnet-4-20250514',
+              optimized: optimized_copy,
             },
           });
         } catch (copyError) {
@@ -159,7 +222,11 @@ Color palette inspiration: ${concept.color_palette.join(', ')}.`;
     await updateCampaignStatus(campaign.id, 'completed');
     log.info('Campaign status updated', { campaignId: campaign.id, status: 'completed' });
 
-    return successResponse({ success: true, data: savedCreatives }, requestId);
+    return successResponse({
+      success: true,
+      data: savedCreatives,
+      ...(qualityScores.length > 0 && { qualityScores }),
+    }, requestId);
   } catch (error) {
     if (error instanceof z.ZodError) {
       log.warning('Validation error', { issues: error.issues });

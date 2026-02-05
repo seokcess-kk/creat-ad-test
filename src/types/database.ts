@@ -103,6 +103,7 @@ export interface CreativeMetadata {
   model?: string;
   generation_params?: Record<string, unknown>;
   variation?: number;
+  optimized?: boolean; // 플랫폼 최적화 카피 여부
 }
 
 // API Request/Response Types
