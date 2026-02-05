@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "lastUpdated": "2026-02-05T14:15:33.103Z",
+  "lastUpdated": "2026-02-05T16:06:32.693Z",
   "activeFeatures": [
     "create-ad-test",
     "db",
@@ -27,7 +27,9 @@
     "settings",
     "creat-ad-test",
     "health",
-    "constants"
+    "constants",
+    "export",
+    "creatives"
   ],
   "primaryFeature": "create-ad-test",
   "features": {
@@ -105,9 +107,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-02-04T15:26:16.014Z",
-        "lastUpdated": "2026-02-05T12:44:53.685Z"
+        "lastUpdated": "2026-02-05T16:06:11.582Z"
       },
-      "lastFile": "C:\\Users\\assag\\solution\\creat-ad-test\\src\\app\\api\\campaigns\\[id]\\route.ts"
+      "lastFile": "C:\\Users\\assag\\solution\\creat-ad-test\\src\\app\\api\\export\\campaigns\\[id]\\route.ts"
     },
     "analyze": {
       "phase": "do",
@@ -339,9 +341,9 @@
       "documents": {},
       "timestamps": {
         "started": "2026-02-05T10:38:47.480Z",
-        "lastUpdated": "2026-02-05T13:30:46.370Z"
+        "lastUpdated": "2026-02-05T16:06:32.693Z"
       },
-      "lastFile": "C:\\Users\\assag\\solution\\creat-ad-test\\src\\types\\database.ts"
+      "lastFile": "C:\\Users\\assag\\solution\\creat-ad-test\\src\\types\\export.ts"
     },
     "health": {
       "phase": "do",
@@ -368,6 +370,32 @@
         "lastUpdated": "2026-02-05T13:21:42.624Z"
       },
       "lastFile": "C:\\Users\\assag\\solution\\creat-ad-test\\src\\lib\\constants\\platform-profiles.ts"
+    },
+    "export": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-05T16:02:31.742Z",
+        "lastUpdated": "2026-02-05T16:05:56.534Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\creat-ad-test\\src\\lib\\export\\tracking.ts"
+    },
+    "creatives": {
+      "phase": "do",
+      "phaseNumber": 3,
+      "matchRate": null,
+      "iterationCount": 0,
+      "requirements": [],
+      "documents": {},
+      "timestamps": {
+        "started": "2026-02-05T16:04:14.190Z",
+        "lastUpdated": "2026-02-05T16:06:03.998Z"
+      },
+      "lastFile": "C:\\Users\\assag\\solution\\creat-ad-test\\src\\app\\api\\export\\creatives\\route.ts"
     }
   },
   "pipeline": {
@@ -378,7 +406,7 @@
   "session": {
     "startedAt": "2026-02-04T15:05:23.148Z",
     "onboardingCompleted": false,
-    "lastActivity": "2026-02-05T14:15:33.103Z"
+    "lastActivity": "2026-02-05T16:06:32.693Z"
   },
   "history": [
     {
@@ -1152,6 +1180,108 @@
     {
       "timestamp": "2026-02-05T14:15:33.103Z",
       "feature": "analyze",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-05T16:02:10.707Z",
+      "feature": "creat-ad-test",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-05T16:02:31.742Z",
+      "feature": "export",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-05T16:02:47.484Z",
+      "feature": "export",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-05T16:03:08.766Z",
+      "feature": "export",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-05T16:03:38.891Z",
+      "feature": "export",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-05T16:03:45.042Z",
+      "feature": "export",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-05T16:04:14.190Z",
+      "feature": "creatives",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-05T16:04:36.810Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-05T16:05:18.090Z",
+      "feature": "export",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-05T16:05:26.089Z",
+      "feature": "export",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-05T16:05:32.155Z",
+      "feature": "export",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-05T16:05:39.583Z",
+      "feature": "export",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-05T16:05:48.752Z",
+      "feature": "export",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-05T16:05:56.534Z",
+      "feature": "export",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-05T16:06:03.998Z",
+      "feature": "creatives",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-05T16:06:11.582Z",
+      "feature": "[id]",
+      "phase": "do",
+      "action": "updated"
+    },
+    {
+      "timestamp": "2026-02-05T16:06:32.693Z",
+      "feature": "creat-ad-test",
       "phase": "do",
       "action": "updated"
     }
