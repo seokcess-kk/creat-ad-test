@@ -26,9 +26,13 @@ export function CreativeGallery({ creatives, platforms }: CreativeGalleryProps) 
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleDownload = async (url: string, filename: string) => {
+  const handleDownload = async (creativeId: string, filename: string) => {
     try {
-      const response = await fetch(url);
+      // API 엔드포인트를 통해 다운로드 (CORS 문제 회피)
+      const response = await fetch(`/api/creatives/${creativeId}/download`);
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status}`);
+      }
       const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -47,7 +51,7 @@ export function CreativeGallery({ creatives, platforms }: CreativeGalleryProps) 
     for (const creative of imageCreatives) {
       if (creative.content_url) {
         await handleDownload(
-          creative.content_url,
+          creative.id,
           `ad-${creative.platform}-${creative.id.slice(0, 8)}.png`
         );
       }
@@ -120,7 +124,7 @@ export function CreativeGallery({ creatives, platforms }: CreativeGalleryProps) 
                             onClick={() =>
                               creative.content_url &&
                               handleDownload(
-                                creative.content_url,
+                                creative.id,
                                 `ad-${platform}-${creative.id.slice(0, 8)}.png`
                               )
                             }

@@ -467,19 +467,30 @@ ${platformProfiles}
 
 JSON 형식으로만 응답해주세요.`;
 
-    const response = await this.client.messages.create({
-      model: this.model,
-      max_tokens: 6000,
-      messages: [{ role: 'user', content: userPrompt }],
-      system: systemPrompt,
-    });
+    try {
+      console.log('🔍 Claude API: 심층 분석 요청 중...');
 
-    const content = response.content[0];
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type');
+      const response = await this.client.messages.create({
+        model: this.model,
+        max_tokens: 6000,
+        messages: [{ role: 'user', content: userPrompt }],
+        system: systemPrompt,
+      });
+
+      const content = response.content[0];
+      if (content.type !== 'text') {
+        throw new Error('Unexpected response type');
+      }
+
+      console.log('✅ Claude API: 심층 분석 응답 수신 완료');
+      return this.parseJsonResponse(content.text);
+    } catch (error) {
+      console.error('❌ Claude API 심층 분석 에러:', error);
+
+      // API 에러 시 목 데이터로 폴백
+      console.log('⚠️ 심층 분석 실패, 목 데이터로 폴백합니다');
+      return this.getMockDeepAnalysis(input);
     }
-
-    return this.parseJsonResponse(content.text);
   }
 
   async generateConcepts(

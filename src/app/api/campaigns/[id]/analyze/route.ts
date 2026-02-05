@@ -87,12 +87,24 @@ export const POST = withLogging(async (request, { log, requestId, params }) => {
       log.info('Claude basic analysis completed', { campaignId: id });
     }
 
-    // 분석 결과 저장
-    const analysis = await createAnalysis(id, analysisResult);
+    // 분석 결과 저장 (기본 필드만 DB에 저장, 심층 분석 데이터는 응답에만 포함)
+    const basicFields = {
+      target_persona: analysisResult.target_persona,
+      platform_guidelines: analysisResult.platform_guidelines,
+      trend_insights: analysisResult.trend_insights,
+    };
+    const analysis = await createAnalysis(id, basicFields);
+
+    // 심층 분석 데이터를 응답용 객체에 병합
+    const fullAnalysisResult = useDeepAnalysis
+      ? { ...analysis, ...analysisResult }
+      : analysis;
+
     log.info('Analysis saved', {
       campaignId: id,
       analysisId: analysis.id,
       analysisType: useDeepAnalysis ? 'deep' : 'basic',
+      hasDeepData: useDeepAnalysis,
     });
 
     // 상태 업데이트
@@ -101,16 +113,30 @@ export const POST = withLogging(async (request, { log, requestId, params }) => {
 
     return successResponse({
       success: true,
-      data: analysis,
+      data: fullAnalysisResult,
       analysisType: useDeepAnalysis ? 'deep' : 'basic',
     }, requestId);
   } catch (error) {
+    // 에러 메시지 추출 (Supabase 에러, 일반 에러, 문자열 등 처리)
+    let errorMessage = 'Unknown error';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (error && typeof error === 'object') {
+      // Supabase PostgrestError 등
+      errorMessage = (error as { message?: string; details?: string }).message
+        || (error as { details?: string }).details
+        || JSON.stringify(error);
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    }
+
     log.error('Analyze campaign error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
+      errorType: error?.constructor?.name,
       stack: error instanceof Error ? error.stack : undefined,
     });
     return errorResponse(
-      `분석 실행에 실패했습니다: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      `분석 실행에 실패했습니다: ${errorMessage}`,
       requestId,
       500
     );

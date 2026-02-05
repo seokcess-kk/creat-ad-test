@@ -69,9 +69,9 @@ export default function CreatePage() {
 
       setCampaign(campaignData.data as Campaign);
 
-      // 분석 실행
+      // 분석 실행 (고도화 심층 분석 사용)
       const analyzeRes = await fetch(
-        `/api/campaigns/${campaignData.data.id}/analyze`,
+        `/api/campaigns/${campaignData.data.id}/analyze?deep=true`,
         { method: 'POST' }
       );
       const analyzeData = await analyzeRes.json();
@@ -97,7 +97,8 @@ export default function CreatePage() {
     setError(null);
 
     try {
-      const res = await fetch(`/api/campaigns/${campaign.id}/concepts`, {
+      // 고도화 컨셉 생성 (플랫폼별 최적화 포함)
+      const res = await fetch(`/api/campaigns/${campaign.id}/concepts?enhanced=true`, {
         method: 'POST',
       });
       const data = await res.json();
@@ -130,7 +131,7 @@ export default function CreatePage() {
 
       setStep(4); // Step 4 (생성 중)로 이동
 
-      // 소재 생성 API 호출
+      // 소재 생성 API 호출 (고도화: 최적화 카피 + 품질 검증)
       const res = await fetch(`/api/concepts/${selectedConcept.id}/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -139,6 +140,8 @@ export default function CreatePage() {
           include_copy: true,
           resolution: '2k',
           variations: 2,
+          optimized_copy: true,    // 플랫폼 최적화 카피
+          validate_quality: true,  // 품질 검증 수행
         }),
       });
       const data = await res.json();
