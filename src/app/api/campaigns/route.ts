@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCampaigns, createCampaign } from '@/lib/db/queries';
+import { getUserIdOrDemo } from '@/lib/auth/session';
 
 const createCampaignSchema = z.object({
   brand_name: z.string().min(1, '브랜드명을 입력해주세요'),
@@ -24,8 +25,8 @@ const createCampaignSchema = z.object({
 // GET /api/campaigns - 캠페인 목록 조회
 export async function GET() {
   try {
-    // TODO: 실제 인증된 사용자 ID 사용
-    const userId = 'demo-user';
+    // Get authenticated user ID or demo user for development
+    const userId = await getUserIdOrDemo();
     const campaigns = await getCampaigns(userId);
 
     return NextResponse.json({
@@ -50,8 +51,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createCampaignSchema.parse(body);
 
-    // TODO: 실제 인증된 사용자 ID 사용
-    const userId = 'demo-user';
+    // Get authenticated user ID or demo user for development
+    const userId = await getUserIdOrDemo();
 
     const campaign = await createCampaign(userId, validatedData);
 

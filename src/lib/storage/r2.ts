@@ -1,18 +1,30 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
-const s3Client = new S3Client({
-  region: 'auto',
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-  },
-});
+// 개발 모드 확인 (R2 환경 변수 없음)
+export const isStorageDevMode = !process.env.R2_ACCOUNT_ID || !process.env.R2_ACCESS_KEY_ID;
+
+// 개발 모드가 아닐 때만 클라이언트 생성
+const s3Client = isStorageDevMode
+  ? null
+  : new S3Client({
+      region: 'auto',
+      endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+      },
+    });
 
 export async function uploadToR2(
   buffer: Buffer,
   mimeType: string = 'image/png'
 ): Promise<string> {
+  // 개발 모드: 플레이스홀더 URL 반환
+  if (isStorageDevMode || !s3Client) {
+    console.log('📦 R2 Storage: 개발 모드 - 플레이스홀더 URL 반환');
+    return `https://placehold.co/800x800/4ECDC4/FFFFFF?text=Uploaded+Image`;
+  }
+
   const fileName = `creatives/${Date.now()}-${Math.random().toString(36).slice(2)}.png`;
 
   const command = new PutObjectCommand({

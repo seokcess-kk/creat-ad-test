@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Header } from '@/components/layout/Header';
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
+      <Header />
       <div className="container mx-auto px-4 py-16">
         {/* Hero Section */}
         <div className="text-center mb-16">

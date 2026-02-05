@@ -23,14 +23,89 @@ interface CopyGenerationInput {
   brandName: string;
 }
 
+// API 키 확인
+const isDevMode = !process.env.ANTHROPIC_API_KEY;
+
 class ClaudeService {
-  private client: Anthropic;
+  private client: Anthropic | null;
   private model: string = 'claude-sonnet-4-20250514';
 
   constructor() {
-    this.client = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
+    if (isDevMode) {
+      this.client = null;
+      console.log('⚠️ Claude API: 개발 모드 (ANTHROPIC_API_KEY 없음)');
+    } else {
+      this.client = new Anthropic({
+        apiKey: process.env.ANTHROPIC_API_KEY,
+      });
+    }
+  }
+
+  // 개발 모드용 목 데이터
+  private getMockAnalysis(input: AnalysisInput): {
+    target_persona: TargetPersona;
+    platform_guidelines: PlatformGuideline[];
+    trend_insights: TrendInsight[];
+  } {
+    return {
+      target_persona: {
+        age_range: '25-35',
+        gender: 'all',
+        interests: ['라이프스타일', '트렌드', '자기계발'],
+        pain_points: ['시간 부족', '선택의 어려움', '품질 불안'],
+        motivations: ['편리함', '가성비', '신뢰성'],
+      },
+      platform_guidelines: input.platforms.map((p) => ({
+        platform: p as Platform,
+        tone: '친근하고 트렌디한',
+        best_practices: ['비주얼 강조', '짧은 문구', '해시태그 활용'],
+        avoid: ['과장 광고', '부정적 표현'],
+      })),
+      trend_insights: [
+        { topic: '지속가능성', relevance: 0.85, description: '환경 친화적 가치 중시' },
+        { topic: '개인화', relevance: 0.9, description: '맞춤형 경험 선호' },
+        { topic: '간편함', relevance: 0.88, description: '원클릭/원스톱 서비스 선호' },
+      ],
+    };
+  }
+
+  private getMockConcepts(campaign: Campaign) {
+    return [
+      {
+        title: '일상의 변화',
+        description: `${campaign.brand_name}와 함께하는 새로운 일상. 작은 변화가 큰 차이를 만듭니다.`,
+        visual_direction: '밝고 따뜻한 색감, 일상 속 제품 사용 장면',
+        copy_direction: '공감을 이끄는 스토리텔링',
+        color_palette: ['#FF6B6B', '#4ECDC4', '#FFE66D'],
+        mood_keywords: ['따뜻한', '친근한', '신뢰감', '편안한'],
+      },
+      {
+        title: '트렌드 리더',
+        description: `앞서가는 당신을 위한 ${campaign.brand_name}. 트렌드를 선도하세요.`,
+        visual_direction: '세련된 미니멀 디자인, 대비가 강한 컬러',
+        copy_direction: '자신감 있는 톤, 차별화 강조',
+        color_palette: ['#2C3E50', '#E74C3C', '#ECF0F1'],
+        mood_keywords: ['세련된', '자신감', '프리미엄', '트렌디'],
+      },
+      {
+        title: '함께하는 가치',
+        description: `${campaign.brand_name}이 만드는 더 나은 내일. 우리의 선택이 세상을 바꿉니다.`,
+        visual_direction: '자연 친화적 이미지, 부드러운 그린 톤',
+        copy_direction: '가치 중심 메시지, 공동체 의식',
+        color_palette: ['#27AE60', '#F39C12', '#9B59B6'],
+        mood_keywords: ['지속가능', '진정성', '따뜻한', '책임감'],
+      },
+    ];
+  }
+
+  private getMockCopy(input: CopyGenerationInput): string {
+    return `✨ ${input.brandName}과 함께하는 특별한 순간
+
+${input.concept.description}
+
+지금 바로 경험해보세요! 👆
+
+#${input.brandName.replace(/\s/g, '')} #광고 #추천 #라이프스타일 #트렌드`;
   }
 
   async analyzeMarket(input: AnalysisInput): Promise<{
@@ -38,6 +113,12 @@ class ClaudeService {
     platform_guidelines: PlatformGuideline[];
     trend_insights: TrendInsight[];
   }> {
+    // 개발 모드: 목 데이터 반환
+    if (isDevMode || !this.client) {
+      console.log('📊 Claude API: 목 분석 데이터 반환');
+      return this.getMockAnalysis(input);
+    }
+
     const systemPrompt = `당신은 광고 마케팅 전문가입니다.
 주어진 브랜드/제품 정보를 분석하여 타겟 페르소나, 플랫폼별 가이드라인, 트렌드 인사이트를 JSON 형식으로 제공해주세요.
 반드시 유효한 JSON만 응답해주세요. 다른 텍스트 없이 JSON만 출력하세요.`;
@@ -74,10 +155,29 @@ class ClaudeService {
     }
 
     try {
-      return JSON.parse(content.text);
-    } catch {
-      // JSON 파싱 실패 시 기본값 반환
+      // JSON 블록 추출 (```json ... ``` 또는 { ... } 형식)
+      let jsonText = content.text.trim();
+
+      // 마크다운 코드 블록 제거
+      const jsonMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch) {
+        jsonText = jsonMatch[1].trim();
+      }
+
+      // { 로 시작하지 않으면 첫 { 부터 마지막 } 까지 추출
+      if (!jsonText.startsWith('{')) {
+        const startIdx = jsonText.indexOf('{');
+        const endIdx = jsonText.lastIndexOf('}');
+        if (startIdx !== -1 && endIdx !== -1) {
+          jsonText = jsonText.substring(startIdx, endIdx + 1);
+        }
+      }
+
+      return JSON.parse(jsonText);
+    } catch (parseError) {
+      // JSON 파싱 실패 시 에러 로깅
       console.error('Failed to parse Claude response:', content.text);
+      console.error('Parse error:', parseError);
       throw new Error('Failed to parse analysis response');
     }
   }
@@ -86,6 +186,12 @@ class ClaudeService {
     analysis: Analysis,
     campaign: Campaign
   ): Promise<Omit<Concept, 'id' | 'campaign_id' | 'created_at' | 'is_selected'>[]> {
+    // 개발 모드: 목 데이터 반환
+    if (isDevMode || !this.client) {
+      console.log('💡 Claude API: 목 컨셉 데이터 반환');
+      return this.getMockConcepts(campaign);
+    }
+
     const systemPrompt = `당신은 크리에이티브 디렉터입니다.
 주어진 분석 결과를 바탕으로 3개의 광고 컨셉을 제안해주세요.
 각 컨셉은 서로 다른 방향성을 가져야 합니다.
@@ -126,14 +232,39 @@ JSON 배열 형식으로만 응답해주세요.`;
     }
 
     try {
-      return JSON.parse(content.text);
-    } catch {
+      // JSON 배열 추출
+      let jsonText = content.text.trim();
+
+      // 마크다운 코드 블록 제거
+      const jsonMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch) {
+        jsonText = jsonMatch[1].trim();
+      }
+
+      // [ 로 시작하지 않으면 첫 [ 부터 마지막 ] 까지 추출
+      if (!jsonText.startsWith('[')) {
+        const startIdx = jsonText.indexOf('[');
+        const endIdx = jsonText.lastIndexOf(']');
+        if (startIdx !== -1 && endIdx !== -1) {
+          jsonText = jsonText.substring(startIdx, endIdx + 1);
+        }
+      }
+
+      return JSON.parse(jsonText);
+    } catch (parseError) {
       console.error('Failed to parse concepts response:', content.text);
+      console.error('Parse error:', parseError);
       throw new Error('Failed to parse concepts response');
     }
   }
 
   async generateCopy(input: CopyGenerationInput): Promise<string> {
+    // 개발 모드: 목 데이터 반환
+    if (isDevMode || !this.client) {
+      console.log('✍️ Claude API: 목 카피 데이터 반환');
+      return this.getMockCopy(input);
+    }
+
     const platformGuide = this.getPlatformCopyGuide(input.platform);
 
     const response = await this.client.messages.create({

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createSupabaseServerClient } from '@/lib/db/supabase';
-import { createCreatives, getCampaignById } from '@/lib/db/queries';
+import { isDevMode } from '@/lib/db/supabase';
+import { createCreatives, getConceptById, updateCampaignStatus } from '@/lib/db/queries';
 import { nanoBanana } from '@/lib/ai/nano-banana';
 import { claude } from '@/lib/ai/claude';
 import type { Platform, Creative } from '@/types/database';
@@ -35,22 +35,23 @@ export async function POST(
     const { platforms, include_copy, resolution, variations } =
       generateSchema.parse(body);
 
-    // 컨셉 조회
-    const supabase = createSupabaseServerClient();
-    const { data: concept, error: conceptError } = await supabase
-      .from('concepts')
-      .select('*, campaigns(*)')
-      .eq('id', conceptId)
-      .single();
+    // 컨셉 조회 (개발 모드 지원)
+    const concept = await getConceptById(conceptId);
 
-    if (conceptError || !concept) {
+    if (!concept) {
       return NextResponse.json(
         { success: false, error: '컨셉을 찾을 수 없습니다' },
         { status: 404 }
       );
     }
 
-    const campaign = concept.campaigns;
+    const campaign = concept.campaign;
+    if (!campaign) {
+      return NextResponse.json(
+        { success: false, error: '캠페인을 찾을 수 없습니다' },
+        { status: 404 }
+      );
+    }
     const creatives: Omit<Creative, 'id' | 'concept_id' | 'created_at'>[] = [];
 
     // 각 플랫폼별로 소재 생성
@@ -124,11 +125,8 @@ Color palette inspiration: ${concept.color_palette.join(', ')}.`;
     // DB에 저장
     const savedCreatives = await createCreatives(conceptId, creatives);
 
-    // 캠페인 상태 업데이트
-    await supabase
-      .from('campaigns')
-      .update({ status: 'completed', updated_at: new Date().toISOString() })
-      .eq('id', campaign.id);
+    // 캠페인 상태 업데이트 (개발 모드 지원)
+    await updateCampaignStatus(campaign.id, 'completed');
 
     return NextResponse.json({
       success: true,

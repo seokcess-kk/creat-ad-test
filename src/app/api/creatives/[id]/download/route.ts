@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/db/supabase';
+import { createSupabaseServerClient, isDevMode } from '@/lib/db/supabase';
+import { getCreativeById } from '@/lib/db/queries';
 
 // GET /api/creatives/:id/download - 소재 다운로드
 export async function GET(
@@ -9,13 +10,28 @@ export async function GET(
   try {
     const { id } = await params;
 
-    // Creative 조회
-    const supabase = createSupabaseServerClient();
-    const { data: creative, error } = await supabase
-      .from('creatives')
-      .select('*')
-      .eq('id', id)
-      .single();
+    // Creative 조회 (개발 모드 지원)
+    let creative;
+    let error = null;
+
+    if (isDevMode) {
+      creative = await getCreativeById(id);
+    } else {
+      const supabase = createSupabaseServerClient();
+      if (!supabase) {
+        return NextResponse.json(
+          { success: false, error: '데이터베이스 연결에 실패했습니다' },
+          { status: 500 }
+        );
+      }
+      const result = await supabase
+        .from('creatives')
+        .select('*')
+        .eq('id', id)
+        .single();
+      creative = result.data;
+      error = result.error;
+    }
 
     if (error || !creative) {
       return NextResponse.json(

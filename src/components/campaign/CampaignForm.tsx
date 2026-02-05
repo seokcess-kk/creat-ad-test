@@ -146,20 +146,20 @@ export function CampaignForm({ onSubmit }: CampaignFormProps) {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {(Object.entries(PLATFORM_SPECS) as [Platform, { name: string }][]).map(
               ([key, { name }]) => (
-                <div
+                <label
                   key={key}
                   className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
                     formData.platforms.includes(key)
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:border-primary/50'
                   }`}
-                  onClick={() => togglePlatform(key)}
                 >
                   <Checkbox
                     checked={formData.platforms.includes(key)}
+                    onCheckedChange={() => togglePlatform(key)}
                   />
                   <span>{name}</span>
-                </div>
+                </label>
               )
             )}
           </div>
