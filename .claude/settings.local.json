@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir \"C:\\\\Users\\\\assag\\\\.claude\")",
+      "Bash(claude:*)",
+      "Bash(dir /b \"%USERPROFILE%\\\\.claude\\\\plugins\\\\cache\\\\bkit-marketplace\\\\bkit\"\")",
+      "Skill(bkit:bkit)",
+      "Bash(curl:*)",
+      "WebSearch",
+      "WebFetch(domain:ai.google.dev)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(CAMPAIGN_ID=\"1bd966d0-981d-4549-89e7-fbe98ddb4381\")",
+      "Bash(node test-image-gen.js:*)",
+      "Bash(del \"C:\\\\Users\\\\assag\\\\solution\\\\creat-ad-test\\\\test-image-gen.js\")",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Add production API integration with dev mode fallback\n\n- Integrate Claude API \\(Anthropic\\) for market analysis and concept generation\n- Add Nano Banana Pro \\(Gemini 3 Pro Image\\) for AI image generation\n- Configure Cloudflare R2 for image storage\n- Add Supabase authentication with login/signup/settings pages\n- Implement dev mode pattern with mock data fallback for all services\n- Add getCreativeById query function for creative downloads\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
