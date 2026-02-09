@@ -1,33 +1,45 @@
 {
-  "sessionCount": 17,
+  "sessionCount": 21,
   "lastSession": {
-    "startedAt": "2026-02-05T16:14:32.396Z",
+    "startedAt": "2026-02-09T06:14:25.202Z",
     "platform": "claude",
     "level": "Enterprise"
   },
   "pdca": {
-    "feature": "export-api",
-    "phase": "check",
-    "matchRate": 85,
+    "feature": null,
+    "phase": null,
+    "matchRate": null,
     "iteration": 0,
-    "updatedAt": "2026-02-06T14:00:00.000Z"
+    "updatedAt": "2026-02-09T08:30:00.000Z"
   },
   "completedFeatures": [
     {
+      "feature": "export-api",
+      "phase": "archived",
+      "matchRate": 95,
+      "iterationCount": 2,
+      "startedAt": "2026-02-06T00:00:00.000Z",
+      "completedAt": "2026-02-09T08:30:00.000Z",
+      "archivedAt": "2026-02-09T09:00:00.000Z",
+      "archivedTo": "docs/archive/2026-02/export-api/"
+    },
+    {
       "feature": "create-ad-test",
-      "matchRate": 93,
-      "completedAt": "2026-02-06T10:00:00.000Z",
-      "sessionUpdates": [
-        "다운로드 CORS 수정 (API 프록시)",
-        "고도화 분석 연동 (deep, enhanced, optimized_copy, validate_quality)",
-        "심층 분석 에러 처리 개선",
-        "매체별 크기 조정 확인"
-      ]
+      "phase": "archived",
+      "matchRate": 100,
+      "iterationCount": 3,
+      "startedAt": "2026-02-05T00:00:00.000Z",
+      "completedAt": "2026-02-09T06:00:00.000Z",
+      "archivedAt": "2026-02-09T09:15:00.000Z",
+      "archivedTo": "docs/archive/2026-02/create-ad-test/"
     },
     {
       "feature": "ai-service-advanced",
+      "phase": "archived",
       "matchRate": 95,
-      "completedAt": "2026-02-05T11:15:00.000Z"
+      "completedAt": "2026-02-05T11:15:00.000Z",
+      "archivedAt": "2026-02-09T09:30:00.000Z",
+      "archivedTo": "docs/archive/2026-02/ai-service-advanced/"
     }
   ]
 }

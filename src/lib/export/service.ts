@@ -7,6 +7,7 @@ import type {
   ExportCreative,
   ExportCreativesQuery,
   ExportCampaignQuery,
+  ExportBatchQuery,
   ExportCreativeMetadata,
 } from '@/types/export';
 import type { Campaign, Analysis, Concept, Platform } from '@/types/database';
@@ -251,6 +252,170 @@ class ExportService {
       resolution: (item.resolution as string) || null,
       metadata,
       created_at: item.created_at as string,
+    };
+  }
+
+  /**
+   * 개별 소재 상세 조회
+   */
+  async getCreativeById(
+    userId: string,
+    creativeId: string,
+    options: { include_metadata?: boolean }
+  ): Promise<ExportCreative> {
+    // 개발 모드 - 에러
+    if (isDevMode) {
+      throw new Error('Creative not found (dev mode)');
+    }
+
+    const supabase = createSupabaseServerClient();
+    if (!supabase) {
+      throw new Error('Database not available');
+    }
+
+    // 소재 조회 (campaigns까지 조인)
+    const { data, error } = await supabase
+      .from('creatives')
+      .select(
+        `
+        *,
+        concepts!inner (
+          id,
+          campaign_id,
+          campaigns!inner (
+            id,
+            user_id,
+            brand_name,
+            campaign_goal,
+            target_audience
+          )
+        )
+      `
+      )
+      .eq('id', creativeId)
+      .single();
+
+    if (error || !data) {
+      throw new Error('Creative not found');
+    }
+
+    // 권한 확인 (시스템 사용자는 통과)
+    const concepts = data.concepts as Record<string, unknown>;
+    const campaigns = concepts?.campaigns as Record<string, unknown>;
+
+    if (userId !== 'system' && campaigns?.user_id !== userId) {
+      throw new Error('Unauthorized access to creative');
+    }
+
+    return this.toExportCreative(data, options.include_metadata !== false);
+  }
+
+  /**
+   * 일괄 내보내기 (기간 기반)
+   */
+  async getBatchExport(
+    userId: string,
+    query: ExportBatchQuery
+  ): Promise<{
+    campaigns_count: number;
+    creatives_count: number;
+    campaigns: Array<{
+      campaign: Campaign;
+      creatives: ExportCreative[];
+    }>;
+  }> {
+    // 개발 모드 - 빈 결과
+    if (isDevMode) {
+      return { campaigns_count: 0, creatives_count: 0, campaigns: [] };
+    }
+
+    const supabase = createSupabaseServerClient();
+    if (!supabase) {
+      throw new Error('Database not available');
+    }
+
+    // 1. 기간 내 캠페인 조회
+    let campaignsQuery = supabase
+      .from('campaigns')
+      .select('*')
+      .gte('created_at', query.from)
+      .lte('created_at', query.to);
+
+    // 사용자 필터 (시스템 사용자는 전체 접근)
+    if (userId !== 'system') {
+      campaignsQuery = campaignsQuery.eq('user_id', userId);
+    }
+
+    // 특정 캠페인 필터
+    if (query.campaigns && query.campaigns.length > 0) {
+      campaignsQuery = campaignsQuery.in('id', query.campaigns);
+    }
+
+    const { data: campaigns, error: campaignsError } = await campaignsQuery.order('created_at', {
+      ascending: false,
+    });
+
+    if (campaignsError) {
+      throw new Error(`Failed to fetch campaigns: ${campaignsError.message}`);
+    }
+
+    if (!campaigns || campaigns.length === 0) {
+      return { campaigns_count: 0, creatives_count: 0, campaigns: [] };
+    }
+
+    // 2. 각 캠페인의 소재 조회
+    const campaignIds = campaigns.map((c) => c.id);
+
+    const { data: rawCreatives, error: creativesError } = await supabase
+      .from('creatives')
+      .select(
+        `
+        *,
+        concepts!inner (
+          id,
+          campaign_id
+        )
+      `
+      )
+      .in('concepts.campaign_id', campaignIds)
+      .order('created_at', { ascending: false });
+
+    if (creativesError) {
+      throw new Error(`Failed to fetch creatives: ${creativesError.message}`);
+    }
+
+    // 3. 캠페인별로 소재 그룹핑
+    const result = campaigns.map((campaign) => {
+      const campaignCreatives = (rawCreatives || [])
+        .filter((item) => {
+          const concepts = item.concepts as Record<string, unknown>;
+          return concepts?.campaign_id === campaign.id;
+        })
+        .map((item) =>
+          this.toExportCreative(
+            {
+              ...item,
+              concepts: {
+                ...(item.concepts as Record<string, unknown>),
+                campaigns: campaign,
+              },
+            },
+            true
+          )
+        );
+
+      return {
+        campaign: campaign as Campaign,
+        creatives: campaignCreatives,
+      };
+    });
+
+    const totalCreatives = result.reduce((sum, r) => sum + r.creatives.length, 0);
+
+    return {
+      campaigns_count: campaigns.length,
+      creatives_count: totalCreatives,
+      campaigns: result,
     };
   }
 

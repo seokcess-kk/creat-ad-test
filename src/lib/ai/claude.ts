@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import type {
   Campaign,
   Analysis,
@@ -27,6 +27,128 @@ import {
   getPlatformCopyTemplate,
 } from '@/lib/constants/platform-profiles';
 
+// ============================================
+// Content Creator Framework (from SKILL.md)
+// ============================================
+
+/**
+ * 검증된 헤드라인 공식 6가지
+ * 광고 카피 제목 생성 시 활용
+ */
+export const HEADLINE_FORMULAS = {
+  HOW_TO: (result: string, timeframe?: string) =>
+    timeframe ? `${result}하는 방법, ${timeframe} 만에` : `${result}하는 방법`,
+  LIST: (number: number, problem: string) =>
+    `${problem}를 해결하는 ${number}가지 방법`,
+  QUESTION: (number: number, mistake: string) =>
+    `혹시 이 ${number}가지 ${mistake} 실수를 하고 있지 않나요?`,
+  NEGATIVE: (action: string) =>
+    `이것을 읽기 전까지 ${action}하지 마세요`,
+  CURIOSITY_GAP: (adjective: string, result: string) =>
+    `${result}의 ${adjective} 비밀`,
+  BEFORE_AFTER: (badState: string, goodState: string, timeframe: string) =>
+    `${badState}에서 ${goodState}로, ${timeframe} 만에`,
+} as const;
+
+/**
+ * Content Creator 핵심 프레임워크
+ */
+export const CONTENT_CREATOR_FRAMEWORK = {
+  // 1. 오디언스 분석 체크리스트
+  audience: {
+    questions: [
+      '누구를 위해 쓰고 있는가?',
+      '그들의 페인 포인트는 무엇인가?',
+      '전문성 수준은 어느 정도인가?',
+      '어떤 행동을 원하는가?',
+    ],
+  },
+
+  // 2. 훅(Hook) 작성 원칙
+  hook: {
+    principles: [
+      '첫 문장으로 즉시 주목을 끌어야 함',
+      '가치, 호기심, 감정으로 리드',
+      '전달할 것을 약속하고 반드시 이행',
+      '첫 문단으로 독자를 사로잡기',
+    ],
+    types: ['질문형', '통계형', '대담한 주장', '스토리 시작', '충격적 사실'],
+  },
+
+  // 3. 감정 트리거
+  emotionalTriggers: {
+    fear: '이 비용이 많이 드는 실수를 하지 마세요',
+    curiosity: '~에 대한 놀라운 진실...',
+    aspiration: '최고의 성과자들이 하는 방법...',
+    urgency: '한정된 시간 기회',
+    belonging: '수천 명과 함께하세요...',
+  },
+
+  // 4. 콘텐츠 체크리스트
+  checklist: [
+    '훅: 첫 문장이 주목을 요구하는가?',
+    '가치: 독자가 실행 가능한 것을 배우는가?',
+    '흐름: 콘텐츠가 논리적으로 진행되는가?',
+    '스캔 가능성: 훑어 읽어도 핵심을 파악할 수 있는가?',
+    '예시: 추상적 개념이 예시로 설명되었는가?',
+    'CTA: 다음 행동이 명확한가?',
+    '톤: 브랜드 보이스와 오디언스에 맞는가?',
+  ],
+} as const;
+
+/**
+ * 플랫폼별 콘텐츠 가이드라인
+ */
+export const PLATFORM_CONTENT_GUIDES = {
+  instagram_feed: {
+    structure: [
+      '[오프닝 훅 - 질문, 통계, 또는 대담한 주장]',
+      '[문제점 - 독자가 경험하는 페인 포인트 설명]',
+      '[해결책 - 예시와 함께 메인 콘텐츠]',
+      '[핵심 요약 - 실행 가능한 인사이트]',
+      '[CTA - 독자가 지금 해야 할 것]',
+    ],
+    wordCount: '150-200자',
+    hashtags: '5-10개',
+  },
+  instagram_story: {
+    structure: ['[임팩트 있는 한 줄]', '[스와이프 CTA]'],
+    wordCount: '40자 이내',
+    hashtags: '1-3개',
+  },
+  tiktok: {
+    structure: [
+      '1/ [훅 - 대담한 주장 또는 질문]',
+      '2/ [컨텍스트 또는 문제 설정]',
+      '3-5/ [예시와 함께 메인 포인트]',
+      '6/ [핵심 요약]',
+      '7/ [CTA - 팔로우, 공유]',
+    ],
+    wordCount: '280자/클립',
+    hashtags: '3-5개',
+  },
+  threads: {
+    structure: [
+      '[개인적인 이야기 또는 관찰]',
+      '[더 넓은 인사이트로 전환]',
+      '[3-5개의 실행 가능한 포인트]',
+      '[참여 질문으로 마무리]',
+    ],
+    wordCount: '200자 이내',
+    hashtags: '2-3개',
+  },
+  youtube_shorts: {
+    structure: ['[0.5초 훅]', '[핵심 메시지]', '[CTA]'],
+    wordCount: '30자 내외',
+    hashtags: '3-5개',
+  },
+  youtube_ads: {
+    structure: ['[가치 제안]', '[제품/서비스 설명]', '[명확한 CTA]'],
+    wordCount: '100자 내외',
+    hashtags: '없음',
+  },
+} as const;
+
 interface AnalysisInput {
   brandName: string;
   productDescription: string;
@@ -49,19 +171,19 @@ interface CopyGenerationInput {
 }
 
 // API 키 확인
-const isDevMode = !process.env.ANTHROPIC_API_KEY;
+const isDevMode = !process.env.OPENAI_API_KEY;
 
 class ClaudeService {
-  private client: Anthropic | null;
-  private model: string = 'claude-sonnet-4-20250514';
+  private client: OpenAI | null;
+  private model: string = 'gpt-5.2';
 
   constructor() {
     if (isDevMode) {
       this.client = null;
-      console.log('⚠️ Claude API: 개발 모드 (ANTHROPIC_API_KEY 없음)');
+      console.log('⚠️ OpenAI API: 개발 모드 (OPENAI_API_KEY 없음)');
     } else {
-      this.client = new Anthropic({
-        apiKey: process.env.ANTHROPIC_API_KEY,
+      this.client = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
       });
     }
   }
@@ -276,16 +398,40 @@ class ClaudeService {
     }));
   }
 
+  /**
+   * 플랫폼별 최적화된 훅 생성 (Content Creator Framework 적용)
+   * - 감정 트리거와 훅 유형을 조합하여 다양한 훅 생성
+   */
   private generatePlatformHook(conceptTitle: string, platform: Platform): string {
-    const hookTemplates: Record<Platform, string> = {
-      instagram_feed: `✨ ${conceptTitle}의 비밀, 지금 공개합니다`,
-      instagram_story: `⬆️ 스와이프해서 확인하세요!`,
-      tiktok: `이거 안 보면 진짜 손해...`,
-      threads: `솔직히 말해서, ${conceptTitle}이 답이에요`,
-      youtube_shorts: `0.5초 만에 사로잡는 ${conceptTitle}`,
-      youtube_ads: `지금 바로 ${conceptTitle}을 경험하세요`,
+    // 훅 유형별 템플릿 (Content Creator Framework 기반)
+    const hookTypes = {
+      question: `${conceptTitle}, 이렇게 하면 될까요?`,
+      curiosity: `${conceptTitle}의 숨겨진 비밀`,
+      bold_claim: `${conceptTitle}이 전부 바꿔놓습니다`,
+      story_start: `처음엔 저도 몰랐어요, ${conceptTitle}의 힘을`,
+      shocking_fact: `99%가 모르는 ${conceptTitle}의 진실`,
     };
-    return hookTemplates[platform];
+
+    // 플랫폼별 최적 훅 유형 매핑
+    const platformHookStyles: Record<Platform, { primary: keyof typeof hookTypes; emoji: string; cta?: string }> = {
+      instagram_feed: { primary: 'curiosity', emoji: '✨', cta: '저장하고 나중에 다시 보세요!' },
+      instagram_story: { primary: 'bold_claim', emoji: '⬆️', cta: '스와이프!' },
+      tiktok: { primary: 'shocking_fact', emoji: '🔥', cta: undefined },
+      threads: { primary: 'story_start', emoji: '', cta: undefined },
+      youtube_shorts: { primary: 'question', emoji: '👆', cta: undefined },
+      youtube_ads: { primary: 'bold_claim', emoji: '', cta: '지금 확인하세요' },
+    };
+
+    const style = platformHookStyles[platform];
+    const baseHook = hookTypes[style.primary];
+
+    // 플랫폼 특성에 맞게 조합
+    if (style.emoji && style.cta) {
+      return `${style.emoji} ${baseHook}\n${style.cta}`;
+    } else if (style.emoji) {
+      return `${style.emoji} ${baseHook}`;
+    }
+    return baseHook;
   }
 
   private getVisualAdjustments(platform: Platform): string[] {
@@ -328,12 +474,19 @@ class ClaudeService {
     return [...commonTags, ...platformSpecificTags[platform]].slice(0, 8);
   }
 
+  /**
+   * Content Creator Framework 기반 기본 Mock 카피
+   */
   private getMockCopy(input: CopyGenerationInput): string {
-    return `✨ ${input.brandName}과 함께하는 특별한 순간
+    // 감정 트리거: Curiosity + Aspiration
+    return `✨ ${HEADLINE_FORMULAS.CURIOSITY_GAP('놀라운', input.concept.title)}
 
 ${input.concept.description}
 
-지금 바로 경험해보세요! 👆
+왜 ${input.brandName}일까요?
+→ 이미 수천 명이 경험한 변화
+
+지금 바로 시작하세요! 👆
 
 #${input.brandName.replace(/\s/g, '')} #광고 #추천 #라이프스타일 #트렌드`;
   }
@@ -345,7 +498,7 @@ ${input.concept.description}
   }> {
     // 개발 모드: 목 데이터 반환
     if (isDevMode || !this.client) {
-      console.log('📊 Claude API: 목 분석 데이터 반환');
+      console.log('📊 OpenAI API: 목 분석 데이터 반환');
       return this.getMockAnalysis(input);
     }
 
@@ -372,19 +525,21 @@ ${input.concept.description}
   "trend_insights": [{ "topic": "", "relevance": 0.0, "description": "" }]
 }`;
 
-    const response = await this.client.messages.create({
+    const response = await this.client.chat.completions.create({
       model: this.model,
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: userPrompt }],
-      system: systemPrompt,
+      max_completion_tokens: 2000,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
     });
 
-    const content = response.content[0];
-    if (content.type !== 'text') {
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
       throw new Error('Unexpected response type');
     }
 
-    return this.parseJsonResponse(content.text);
+    return this.parseJsonResponse(content);
   }
 
   /**
@@ -394,7 +549,7 @@ ${input.concept.description}
   async analyzeMarketDeep(input: DeepAnalysisInput): Promise<DeepAnalysis> {
     // 개발 모드: 목 데이터 반환
     if (isDevMode || !this.client) {
-      console.log('📊 Claude API: 고도화된 심층 분석 목 데이터 반환');
+      console.log('📊 OpenAI API: 고도화된 심층 분석 목 데이터 반환');
       return this.getMockDeepAnalysis(input);
     }
 
@@ -468,24 +623,26 @@ ${platformProfiles}
 JSON 형식으로만 응답해주세요.`;
 
     try {
-      console.log('🔍 Claude API: 심층 분석 요청 중...');
+      console.log('🔍 OpenAI API: 심층 분석 요청 중...');
 
-      const response = await this.client.messages.create({
+      const response = await this.client.chat.completions.create({
         model: this.model,
-        max_tokens: 6000,
-        messages: [{ role: 'user', content: userPrompt }],
-        system: systemPrompt,
+        max_completion_tokens: 6000,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
       });
 
-      const content = response.content[0];
-      if (content.type !== 'text') {
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
         throw new Error('Unexpected response type');
       }
 
-      console.log('✅ Claude API: 심층 분석 응답 수신 완료');
-      return this.parseJsonResponse(content.text);
+      console.log('✅ OpenAI API: 심층 분석 응답 수신 완료');
+      return this.parseJsonResponse(content);
     } catch (error) {
-      console.error('❌ Claude API 심층 분석 에러:', error);
+      console.error('❌ OpenAI API 심층 분석 에러:', error);
 
       // API 에러 시 목 데이터로 폴백
       console.log('⚠️ 심층 분석 실패, 목 데이터로 폴백합니다');
@@ -499,7 +656,7 @@ JSON 형식으로만 응답해주세요.`;
   ): Promise<Omit<Concept, 'id' | 'campaign_id' | 'created_at' | 'is_selected'>[]> {
     // 개발 모드: 목 데이터 반환
     if (isDevMode || !this.client) {
-      console.log('💡 Claude API: 목 컨셉 데이터 반환');
+      console.log('💡 OpenAI API: 목 컨셉 데이터 반환');
       return this.getMockConcepts(campaign);
     }
 
@@ -530,19 +687,21 @@ JSON 형식으로만 응답해주세요.`;
 
 JSON 배열 형식으로만 응답해주세요.`;
 
-    const response = await this.client.messages.create({
+    const response = await this.client.chat.completions.create({
       model: this.model,
-      max_tokens: 3000,
-      messages: [{ role: 'user', content: userPrompt }],
-      system: systemPrompt,
+      max_completion_tokens: 3000,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
     });
 
-    const content = response.content[0];
-    if (content.type !== 'text') {
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
       throw new Error('Unexpected response type');
     }
 
-    return this.parseJsonResponse(content.text, true);
+    return this.parseJsonResponse(content, true);
   }
 
   /**
@@ -555,7 +714,7 @@ JSON 배열 형식으로만 응답해주세요.`;
   ): Promise<Omit<EnhancedConcept, 'id' | 'campaign_id' | 'created_at'>[]> {
     // 개발 모드: 목 데이터 반환
     if (isDevMode || !this.client) {
-      console.log('💡 Claude API: 고도화된 컨셉 목 데이터 반환');
+      console.log('💡 OpenAI API: 고도화된 컨셉 목 데이터 반환');
       return this.getMockEnhancedConcepts(campaign, platforms);
     }
 
@@ -623,33 +782,35 @@ ${platformGuides}
 
 JSON 배열 형식으로만 응답해주세요.`;
 
-    const response = await this.client.messages.create({
+    const response = await this.client.chat.completions.create({
       model: this.model,
-      max_tokens: 6000,
-      messages: [{ role: 'user', content: userPrompt }],
-      system: systemPrompt,
+      max_completion_tokens: 6000,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
     });
 
-    const content = response.content[0];
-    if (content.type !== 'text') {
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
       throw new Error('Unexpected response type');
     }
 
-    return this.parseJsonResponse(content.text, true);
+    return this.parseJsonResponse(content, true);
   }
 
   async generateCopy(input: CopyGenerationInput): Promise<string> {
     // 개발 모드: 목 데이터 반환
     if (isDevMode || !this.client) {
-      console.log('✍️ Claude API: 목 카피 데이터 반환');
+      console.log('✍️ OpenAI API: 목 카피 데이터 반환');
       return this.getMockCopy(input);
     }
 
     const platformGuide = this.getPlatformCopyGuide(input.platform);
 
-    const response = await this.client.messages.create({
+    const response = await this.client.chat.completions.create({
       model: this.model,
-      max_tokens: 500,
+      max_completion_tokens: 500,
       messages: [
         {
           role: 'user',
@@ -669,16 +830,17 @@ ${platformGuide}
       ],
     });
 
-    const content = response.content[0];
-    if (content.type !== 'text') {
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
       throw new Error('Unexpected response type');
     }
 
-    return content.text;
+    return content;
   }
 
   /**
    * 플랫폼 특성이 완전히 반영된 고도화 카피 생성
+   * Content Creator Framework 적용
    */
   async generateOptimizedCopy(
     input: CopyGenerationInput,
@@ -686,16 +848,38 @@ ${platformGuide}
   ): Promise<string> {
     // 개발 모드: 목 데이터 반환
     if (isDevMode || !this.client) {
-      console.log('✍️ Claude API: 최적화된 카피 목 데이터 반환');
+      console.log('✍️ OpenAI API: 최적화된 카피 목 데이터 반환');
       return this.getMockOptimizedCopy(input);
     }
 
     const profile = PLATFORM_DEEP_PROFILES[input.platform];
     const copyTemplate = getPlatformCopyTemplate(input.platform);
+    const platformGuide = PLATFORM_CONTENT_GUIDES[input.platform];
 
     const systemPrompt = `당신은 ${input.platform} 플랫폼 광고 카피 전문 작가입니다.
 이 플랫폼의 알고리즘과 사용자 행동 패턴을 완벽히 이해하고 있습니다.
-주어진 컨셉과 플랫폼 특성에 최적화된 광고 카피를 작성해주세요.
+
+## Content Creator 핵심 원칙
+1. 훅(Hook) 우선: 첫 문장이 즉시 주목을 끌어야 합니다
+2. 가치 제공: 실행 가능한 인사이트나 명확한 이점 제시
+3. 스캔 가능성: 짧은 문단, 핵심 포인트 강조
+4. 명확한 CTA: 다음 행동이 분명해야 합니다
+
+## 검증된 헤드라인 공식 활용
+- How To: "[결과]하는 방법, [시간] 만에"
+- List: "[문제]를 해결하는 [숫자]가지 방법"
+- Question: "혹시 이 [숫자]가지 [실수] 하고 있지 않나요?"
+- Negative: "이것을 읽기 전까지 [행동]하지 마세요"
+- Curiosity Gap: "[결과]의 [형용사] 비밀"
+- Before/After: "[나쁜 상태]에서 [좋은 상태]로, [시간] 만에"
+
+## 감정 트리거 활용
+- Fear: 비용이 많이 드는 실수 회피
+- Curiosity: 놀라운 진실 공개
+- Aspiration: 최고 성과자의 비밀
+- Urgency: 한정된 기회
+- Belonging: 커뮤니티 소속감
+
 카피만 출력하세요. 설명이나 주석 없이 실제 사용 가능한 카피만 작성하세요.`;
 
     const userPrompt = `[브랜드 & 컨셉]
@@ -727,6 +911,11 @@ ${platformGuide}
 
 ${copyTemplate ? `[카피 템플릿 참고]\n${copyTemplate}` : ''}
 
+[${input.platform} 콘텐츠 구조 가이드]
+${platformGuide?.structure.join('\n') || ''}
+- 권장 글자수: ${platformGuide?.wordCount || '적절히'}
+- 해시태그: ${platformGuide?.hashtags || '플랫폼에 맞게'}
+
 ${
   deepAnalysis
     ? `[타겟 심리 트리거]
@@ -738,22 +927,31 @@ ${deepAnalysis.psychological_triggers?.map((t) => `- ${t.trigger_type}: ${t.appl
     : ''
 }
 
+## 반드시 지켜야 할 사항
+1. 첫 줄은 무조건 훅(Hook)으로 시작 - 질문, 충격적 사실, 또는 대담한 주장
+2. 검증된 헤드라인 공식 중 하나 활용
+3. 감정 트리거 최소 1개 이상 적용
+4. 플랫폼 콘텐츠 구조 준수
+5. 명확한 CTA로 마무리
+
 위 모든 요소를 반영하여 ${input.platform}에 완벽히 최적화된 광고 카피를 작성해주세요.
 해시태그도 포함해주세요.`;
 
-    const response = await this.client.messages.create({
+    const response = await this.client.chat.completions.create({
       model: this.model,
-      max_tokens: 800,
-      messages: [{ role: 'user', content: userPrompt }],
-      system: systemPrompt,
+      max_completion_tokens: 800,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
     });
 
-    const content = response.content[0];
-    if (content.type !== 'text') {
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
       throw new Error('Unexpected response type');
     }
 
-    return content.text;
+    return content;
   }
 
   /**
@@ -770,9 +968,9 @@ ${deepAnalysis.psychological_triggers?.map((t) => `- ${t.trigger_type}: ${t.appl
 
     const profile = PLATFORM_DEEP_PROFILES[platform];
 
-    const response = await this.client.messages.create({
+    const response = await this.client.chat.completions.create({
       model: this.model,
-      max_tokens: 1500,
+      max_completion_tokens: 1500,
       messages: [
         {
           role: 'user',
@@ -806,51 +1004,81 @@ ${copy}
       ],
     });
 
-    const content = response.content[0];
-    if (content.type !== 'text') {
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
       throw new Error('Unexpected response type');
     }
 
-    return this.parseJsonResponse(content.text);
+    return this.parseJsonResponse(content);
   }
 
+  /**
+   * Content Creator Framework 기반 Mock 카피 생성
+   * - 검증된 헤드라인 공식과 감정 트리거 적용
+   */
   private getMockOptimizedCopy(input: CopyGenerationInput): string {
-    const profile = PLATFORM_DEEP_PROFILES[input.platform];
-    const emojiLevel = profile?.content_specs.copy_guidelines.emoji_usage;
+    const brandTag = `#${input.brandName.replace(/\s/g, '')}`;
 
+    // Content Creator Framework 기반 템플릿
     const templates: Record<Platform, string> = {
-      instagram_feed: `${emojiLevel === 'heavy' ? '✨ ' : ''}${input.concept.title}의 비밀
+      instagram_feed: `✨ ${HEADLINE_FORMULAS.CURIOSITY_GAP('숨겨진', input.concept.title)}
 
 ${input.concept.description}
 
+왜 아직도 모르셨나요?
 ${input.brandName}과 함께라면 당신도 할 수 있어요.
-지금 바로 경험해보세요! 👆
 
-#${input.brandName.replace(/\s/g, '')} #광고 #추천 #라이프스타일 #트렌드 #일상 #꿀템`,
+💡 핵심 포인트:
+• 시작하기 쉬움
+• 결과가 눈에 보임
+• 지금이 최적의 타이밍
 
-      instagram_story: `⬆️ 스와이프!
+저장하고 나중에 다시 보세요! 👆
+
+${brandTag} #광고 #추천 #라이프스타일 #트렌드 #일상 #꿀템 #필수템`,
+
+      instagram_story: `⬆️ 99%가 모르는 비밀
 ${input.concept.title}
-지금 확인하세요 👆`,
+스와이프해서 확인! 👆`,
 
-      tiktok: `이거 안 보면 진짜 손해...
-${input.brandName} ${input.concept.title} 🔥
-#${input.brandName.replace(/\s/g, '')} #추천 #fyp`,
+      tiktok: `🔥 ${HEADLINE_FORMULAS.NEGATIVE('이거 보기')}
 
-      threads: `솔직히 말해서,
+${input.concept.title}이 진짜입니다
+
+저도 처음엔 몰랐어요...
+근데 써보고 인생 바뀜
+
+${brandTag} #추천 #fyp #꿀팁 #필수`,
+
+      threads: `솔직히 고백할게요.
+
+처음엔 저도 의심했어요.
+"${input.concept.title}"이 뭐가 다르다고?
+
+근데 ${input.brandName} 써본 이후로 생각이 바뀌었습니다.
+
 ${input.concept.description}
 
-${input.brandName}이 답이에요.
-써보신 분들은 아실 거예요.`,
+써보신 분들은 아실 거예요.
+아직 안 써보셨다면, 지금이 기회입니다.
 
-      youtube_shorts: `${input.concept.title}
-${input.brandName}
-#shorts #${input.brandName.replace(/\s/g, '')}`,
+어떻게 생각하세요?`,
+
+      youtube_shorts: `👆 0.5초만 주세요
+
+${HEADLINE_FORMULAS.QUESTION(1, input.concept.title)}
+
+정답은 ${input.brandName}입니다
+
+#shorts ${brandTag} #추천`,
 
       youtube_ads: `[${input.brandName}]
-${input.concept.title}
+
+${HEADLINE_FORMULAS.BEFORE_AFTER('고민만 하던 당신', '행동하는 당신', '지금')}
 
 ${input.concept.description}
 
+더 이상 미루지 마세요.
 지금 바로 시작하세요.`,
     };
 
