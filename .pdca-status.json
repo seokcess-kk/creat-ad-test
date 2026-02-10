@@ -1,14 +1,22 @@
 {
   "ad-creative-generator": {
-    "phase": "completed",
+    "phase": "archived",
     "startedAt": "2026-02-05T00:10:00Z",
     "completedAt": "2026-02-05T12:00:00Z",
-    "planPath": "docs/01-plan/features/ad-creative-generator.plan.md",
-    "designPath": "docs/02-design/features/ad-creative-generator.design.md",
-    "analysisPath": "docs/03-analysis/ad-creative-generator.analysis.md",
-    "reportPath": "docs/04-report/features/ad-creative-generator.report.md",
+    "archivedAt": "2026-02-10T00:00:00Z",
+    "archivedTo": "docs/archive/2026-02/create-ad-test/",
     "matchRate": 95.9,
     "iterationCount": 1,
-    "status": "PDCA cycle completed successfully"
+    "status": "Archived - Replaced by v2.0"
+  },
+  "channel-first-ad-generator": {
+    "phase": "do",
+    "startedAt": "2026-02-10T00:00:00Z",
+    "planPath": "docs/01-plan/features/channel-first-ad-generator.plan.md",
+    "designPath": "docs/02-design/features/channel-first-ad-generator.design.md",
+    "planApprovedAt": "2026-02-10T01:00:00Z",
+    "designCreatedAt": "2026-02-10T02:00:00Z",
+    "doStartedAt": "2026-02-10T03:00:00Z",
+    "status": "Implementation in progress"
   }
 }
