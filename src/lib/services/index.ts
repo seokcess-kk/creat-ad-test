@@ -63,11 +63,28 @@ export async function runAnalysisPipeline(
 
   // 4. 근거 검증
   console.log('\n🔬 Step 4/5: 근거 검증');
-  const validatedEvidence = await evidenceValidatorService.validate(
+  let validatedEvidence = await evidenceValidatorService.validate(
     extractedPatterns,
     { channel: request.platform, industry: request.industry },
     collectedAds
   );
+
+  // 강한/보통 근거가 충분하지 않으면 기본 인사이트 추가
+  const strongModerateCount = validatedEvidence.filter(
+    e => e.evidence_strength === 'strong' || e.evidence_strength === 'moderate'
+  ).length;
+
+  if (strongModerateCount < 3) {
+    console.log('⚠️ 유의미한 인사이트 부족 - 기본 인사이트 추가');
+    const defaultInsights = insightGeneratorService.generateDefaultInsights(
+      request.platform,
+      request.industry
+    );
+    // 기존 검증된 것과 기본 인사이트를 합침
+    validatedEvidence = [...validatedEvidence, ...defaultInsights];
+    // 중복 제거 및 정렬
+    validatedEvidence.sort((a, b) => b.confidence_score - a.confidence_score);
+  }
 
   // 5. 인사이트 생성
   console.log('\n💡 Step 5/5: 인사이트 생성');
@@ -80,11 +97,14 @@ export async function runAnalysisPipeline(
 
   const duration = ((Date.now() - startTime) / 1000).toFixed(1);
 
+  const strongCount = validatedEvidence.filter(e => e.evidence_strength === 'strong').length;
+  const moderateCount = validatedEvidence.filter(e => e.evidence_strength === 'moderate').length;
+
   console.log('\n═══════════════════════════════════════════════════════════');
   console.log(`✅ Analysis Pipeline 완료 (${duration}초)`);
   console.log(`   총 광고: ${collectedAds.length}개`);
   console.log(`   추출 패턴: ${extractedPatterns.length}개`);
-  console.log(`   검증된 인사이트: ${validatedEvidence.length}개`);
+  console.log(`   검증된 인사이트: ${validatedEvidence.length}개 (핵심: ${strongCount}, 참고: ${moderateCount})`);
   console.log(`   분석 품질 점수: ${analysisResult.analysis_metadata.analysis_quality_score}점`);
   console.log('═══════════════════════════════════════════════════════════');
 

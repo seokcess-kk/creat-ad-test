@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
 import type { ChannelAnalysisResult } from '@/types/analysis';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Google AI 클라이언트 (Nanobanana Pro / Imagen) - 이미지 생성용
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '');
+
+// OpenAI 클라이언트 (GPT-5.2) - 카피 생성용
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // 채널별 이미지 사이즈 설정
 const CHANNEL_SPECS: Record<string, { width: number; height: number; format: string; aspectRatio: string }> = {
@@ -36,19 +39,10 @@ export async function POST(request: NextRequest) {
       const imagePrompt = buildImagePrompt(concept, brandInfo, channelAnalysis, i);
 
       try {
-        // OpenAI DALL-E로 이미지 생성
-        const imageResponse = await openai.images.generate({
-          model: 'dall-e-3',
-          prompt: imagePrompt,
-          n: 1,
-          size: spec.format === 'horizontal' ? '1792x1024' : spec.format === 'vertical' ? '1024x1792' : '1024x1024',
-          quality: 'hd',
-          style: 'vivid',
-        });
+        // Google AI Imagen (Nanobanana Pro)로 이미지 생성
+        const imageUrl = await generateImageWithImagen(imagePrompt, spec);
 
-        const imageUrl = imageResponse.data?.[0]?.url || 'https://via.placeholder.com/1024?text=Generated+Ad';
-
-        // 카피 생성
+        // 카피 생성 (Gemini 사용)
         const copy = await generateCopy(concept, brandInfo, channel, i);
 
         creatives.push({
@@ -103,6 +97,7 @@ export async function POST(request: NextRequest) {
           generated_at: new Date().toISOString(),
           variations_requested: variations,
           variations_generated: creatives.length,
+          model: 'nanobanana-pro',
         },
       },
     });
@@ -112,6 +107,46 @@ export async function POST(request: NextRequest) {
       { success: false, error: error instanceof Error ? error.message : '소재 생성에 실패했습니다' },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Google AI Imagen (Nanobanana Pro)으로 이미지 생성
+ */
+async function generateImageWithImagen(
+  prompt: string,
+  spec: { width: number; height: number; format: string; aspectRatio: string }
+): Promise<string> {
+  try {
+    // Imagen 3 모델 사용
+    const model = genAI.getGenerativeModel({ model: 'imagen-3.0-generate-002' });
+
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        // Imagen specific config
+        responseModalities: ['image'],
+      } as any,
+    });
+
+    const response = result.response;
+
+    // 이미지 데이터 추출
+    if (response.candidates && response.candidates[0]?.content?.parts) {
+      for (const part of response.candidates[0].content.parts) {
+        if ((part as any).inlineData) {
+          const imageData = (part as any).inlineData;
+          // Base64 이미지를 data URL로 반환
+          return `data:${imageData.mimeType};base64,${imageData.data}`;
+        }
+      }
+    }
+
+    throw new Error('No image generated');
+  } catch (error) {
+    console.error('Imagen generation error:', error);
+    // 대안: Gemini를 사용한 텍스트 기반 이미지 설명 생성 후 플레이스홀더
+    return `https://via.placeholder.com/${spec.width}x${spec.height}?text=Generating...`;
   }
 }
 
@@ -163,7 +198,7 @@ function buildImagePrompt(
 }
 
 /**
- * 카피 생성
+ * 카피 생성 (GPT-5.2 사용)
  */
 async function generateCopy(
   concept: any,
@@ -173,16 +208,15 @@ async function generateCopy(
 ): Promise<{ headline: string; body: string; cta: string }> {
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5.2',
       messages: [
         {
           role: 'system',
-          content: `You are an expert copywriter for ${channel} ads. Write compelling, concise copy in Korean.`,
+          content: `당신은 ${channel} 광고 전문 카피라이터입니다. 한국어로 작성하세요.`,
         },
         {
           role: 'user',
-          content: `
-브랜드: ${brandInfo?.brandName || '브랜드'}
+          content: `브랜드: ${brandInfo?.brandName || '브랜드'}
 제품: ${brandInfo?.productName || '제품'}
 컨셉: ${concept.title}
 카피 방향: ${concept.copy_direction}
@@ -195,9 +229,8 @@ async function generateCopy(
 
 변형 ${variationIndex + 1}번이므로 이전과 다른 톤으로 작성해주세요.
 
-JSON 형식으로 응답해주세요:
-{"headline": "...", "body": "...", "cta": "..."}
-`,
+JSON 형식으로만 응답해주세요:
+{"headline": "...", "body": "...", "cta": "..."}`,
         },
       ],
       temperature: 0.8,

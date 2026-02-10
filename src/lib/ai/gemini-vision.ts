@@ -283,46 +283,102 @@ JSON 형식으로만 응답해주세요. 추가 설명 없이 JSON만 출력하�
   }
 
   /**
-   * Mock 분석 데이터 (개발용)
+   * Mock 분석 데이터 (개발용) - 다양한 패턴 생성
    */
   private getMockAnalysis(): ImageAnalysisResult {
+    // 다양한 패턴 옵션들
+    const gridPatterns = ['centered', '2-column', 'asymmetric', 'split-horizontal', 'full-bleed', '3-column', 'grid-4'];
+    const productPositions = ['center', 'left-third', 'right-half', 'bottom', 'top', 'left', 'right'];
+    const headlinePositions = ['top-center', 'overlay-center', 'bottom-left', 'top-left', 'bottom-center'];
+    const logoPositions = ['top-left', 'top-right', 'bottom-right', 'bottom-left'];
+    const ctaPositions = ['bottom-center', 'bottom-right', 'overlay', 'bottom-left', 'right'];
+    const visualFlows = ['F-pattern', 'Z-pattern', 'center-focus', 'left-to-right', 'top-to-bottom', 'diagonal'];
+    const whitespaceOptions = ['minimal', 'moderate', 'generous'];
+
+    // 색상 팔레트들
+    const colorPalettes = [
+      { primary: '#FF6B6B', secondary: '#4ECDC4', accent: '#FFE66D', tone: 'warm-bright' },
+      { primary: '#2C3E50', secondary: '#ECF0F1', accent: '#E74C3C', tone: 'cool-dark' },
+      { primary: '#F8B500', secondary: '#1A1A1A', accent: '#FFFFFF', tone: 'vibrant' },
+      { primary: '#A8D8EA', secondary: '#AA96DA', accent: '#FCBAD3', tone: 'pastel' },
+      { primary: '#1ABC9C', secondary: '#2C3E50', accent: '#F39C12', tone: 'modern' },
+      { primary: '#E8DAEF', secondary: '#FADBD8', accent: '#85C1E9', tone: 'soft' },
+      { primary: '#212121', secondary: '#FAFAFA', accent: '#FF5722', tone: 'minimal' },
+      { primary: '#FFB6C1', secondary: '#FFC0CB', accent: '#FF69B4', tone: 'feminine' },
+      { primary: '#2E4057', secondary: '#048A81', accent: '#F6AE2D', tone: 'professional' },
+      { primary: '#5C4033', secondary: '#D4AF37', accent: '#FFFDD0', tone: 'luxury' },
+    ];
+
+    const contrastLevels = ['high', 'medium', 'low'];
+
+    const headlines = [
+      '지금 바로 시작하세요', '새로운 당신을 만나다', '특별한 혜택이 기다립니다',
+      '오늘만 이 가격', '품절 임박 서두르세요', '당신을 위한 맞춤 추천',
+      '베스트셀러 1위', '리뷰 평점 4.9', '첫 구매 50% 할인',
+      '무료 배송 혜택', '한정판 에디션', '프리미엄 퀄리티'
+    ];
+
+    const ctaTexts = [
+      '지금 구매하기', '자세히 보기', '무료 체험', '할인 확인',
+      '쇼핑하러 가기', '더 알아보기', '지금 신청', '예약하기'
+    ];
+
+    const fontStyles = ['bold-sans', 'elegant-serif', 'modern-minimal', 'playful', 'handwritten', 'geometric'];
+    const imageTypes = ['photo', 'graphic', 'illustration', 'mixed', 'user-generated', '3d'];
+    const expressions = ['smiling', 'serious', 'neutral', 'excited', 'thoughtful'];
+    const presentations = ['closeup', 'lifestyle', 'before-after', 'flat-lay', 'action-shot', 'comparison', 'studio'];
+    const effects = ['high-saturation', 'soft-focus', 'gradient-overlay', 'blur-background', 'vignette', 'natural', 'cinematic'];
+
+    const goals = ['awareness', 'conversion', 'engagement', 'traffic', 'app-install'];
+    const audiences = [
+      'young-women-20s', 'young-men-20s', 'women-30s', 'men-30s',
+      'business-professionals', 'parents', 'gen-z', 'health-conscious',
+      'tech-enthusiasts', 'fashion-forward', 'budget-shoppers', 'luxury-seekers'
+    ];
+    const industries = ['cosmetics', 'fashion', 'food', 'tech', 'fitness', 'finance', 'education', 'travel'];
+
+    // 랜덤 선택 헬퍼
+    const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+    const palette = pick(colorPalettes);
+    const hasPerson = Math.random() > 0.3; // 70% 확률로 인물 등장
+
     return {
       layout: {
-        grid_pattern: 'centered',
+        grid_pattern: pick(gridPatterns),
         element_positions: {
-          product: 'center',
-          headline: 'top-center',
-          logo: 'top-left',
-          cta: 'bottom-center',
+          product: pick(productPositions),
+          headline: pick(headlinePositions),
+          logo: pick(logoPositions),
+          cta: pick(ctaPositions),
         },
-        visual_flow: 'center-focus',
-        whitespace_usage: 'moderate',
+        visual_flow: pick(visualFlows),
+        whitespace_usage: pick(whitespaceOptions),
       },
       colors: {
-        primary: '#FF6B6B',
-        secondary: '#4ECDC4',
-        accent: '#FFE66D',
-        overall_tone: 'warm-bright',
-        contrast_level: 'high',
+        primary: palette.primary,
+        secondary: palette.secondary,
+        accent: palette.accent,
+        overall_tone: palette.tone,
+        contrast_level: pick(contrastLevels),
       },
       text: {
-        headline: '샘플 헤드라인 텍스트',
-        subheadline: null,
-        cta_text: '지금 시작하기',
-        font_style: 'bold-sans',
-        text_ratio_percent: 15,
+        headline: pick(headlines),
+        subheadline: Math.random() > 0.5 ? '서브 헤드라인 텍스트' : null,
+        cta_text: pick(ctaTexts),
+        font_style: pick(fontStyles),
+        text_ratio_percent: Math.floor(Math.random() * 25) + 10, // 10-35%
       },
       visual_style: {
-        image_type: 'photo',
-        has_person: true,
-        person_expression: 'smiling',
-        product_presentation: 'lifestyle',
-        filters_effects: ['high-saturation'],
+        image_type: pick(imageTypes),
+        has_person: hasPerson,
+        person_expression: hasPerson ? pick(expressions) : undefined,
+        product_presentation: pick(presentations),
+        filters_effects: [pick(effects), ...(Math.random() > 0.5 ? [pick(effects)] : [])],
       },
       ad_classification: {
-        estimated_goal: 'conversion',
-        estimated_audience: 'young-women-20s',
-        industry: 'cosmetics',
+        estimated_goal: pick(goals),
+        estimated_audience: pick(audiences),
+        industry: pick(industries),
       },
     };
   }
