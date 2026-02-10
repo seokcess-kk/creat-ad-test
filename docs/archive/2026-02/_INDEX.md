@@ -8,6 +8,7 @@
 
 | Feature | Match Rate | Archived | Documents |
 |---------|:----------:|----------|-----------|
+| [channel-first-ad-generator](./channel-first-ad-generator/) | 93% | 2026-02-10 | Plan, Design, Analysis, Report |
 | [create-ad-test](./create-ad-test/) | 100% | 2026-02-09 | Plan, Design, Analysis, Report |
 | [export-api](./export-api/) | 95% | 2026-02-09 | Plan, Design, Analysis, Report |
 | [ai-service-advanced](./ai-service-advanced/) | 95% | 2026-02-09 | Plan, Analysis, Report |
@@ -74,4 +75,28 @@
 
 ---
 
-*Last updated: 2026-02-09*
+## channel-first-ad-generator
+
+**Summary**: Channel-First Ad Generator v2.0 - 6-step wizard with statistical validation
+
+| Metric | Value |
+|--------|-------|
+| Match Rate | 93% |
+| Completed | 2026-02-10 |
+| Status | Production Ready |
+
+**Key Features**:
+- 6-step UI workflow (Channel → Analysis → Brand → Concept → Generate → Result)
+- External API integration (Meta Ad Library, TikTok, Gemini Vision)
+- Statistical validation (z-test, p < 0.05)
+- Evidence-based insight generation
+
+**Documents**:
+- [channel-first-ad-generator.plan.md](./channel-first-ad-generator/channel-first-ad-generator.plan.md)
+- [channel-first-ad-generator.design.md](./channel-first-ad-generator/channel-first-ad-generator.design.md)
+- [channel-first-ad-generator.analysis.md](./channel-first-ad-generator/channel-first-ad-generator.analysis.md)
+- [channel-first-ad-generator.report.md](./channel-first-ad-generator/channel-first-ad-generator.report.md)
+
+---
+
+*Last updated: 2026-02-10*
