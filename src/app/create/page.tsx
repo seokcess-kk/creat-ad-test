@@ -1,172 +1,68 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { CampaignForm } from '@/components/campaign/CampaignForm';
-import { AnalysisReport } from '@/components/analysis/AnalysisReport';
-import { ConceptSelector } from '@/components/concept/ConceptSelector';
-import { CreativeGallery } from '@/components/creative/CreativeGallery';
 import { useCampaignStore } from '@/stores/campaign-store';
-import type { CreateCampaignRequest, Campaign, Analysis, Concept, Creative } from '@/types/database';
+import {
+  Step1ChannelSelect,
+  Step2ChannelAnalysis,
+  Step3BrandInfo,
+  Step4ConceptSelect,
+  Step5CreativeGenerate,
+  Step6Result,
+  type GeneratedCreative,
+} from '@/components/create';
 
+// Channel-First v2.0 6단계 플로우
 const STEPS = [
-  { number: 1, title: '캠페인 정보' },
-  { number: 2, title: '분석 결과' },
-  { number: 3, title: '컨셉 선택' },
-  { number: 4, title: '소재 생성' },
-  { number: 5, title: '결과 확인' },
+  { number: 1, title: '채널 선택', icon: '📺' },
+  { number: 2, title: '채널 분석', icon: '🔍' },
+  { number: 3, title: '브랜드 정보', icon: '📝' },
+  { number: 4, title: '컨셉 선택', icon: '🎨' },
+  { number: 5, title: '소재 생성', icon: '✨' },
+  { number: 6, title: '결과 확인', icon: '🎉' },
 ];
 
 export default function CreatePage() {
   const {
     currentStep,
-    campaign,
-    analysis,
-    concepts,
-    selectedConcept,
-    creatives,
-    isLoading,
     error,
     setStep,
     nextStep,
     prevStep,
-    setCampaign,
-    setAnalysis,
-    setConcepts,
-    selectConcept,
-    setCreatives,
-    setLoading,
     setError,
     reset,
   } = useCampaignStore();
 
-  // 페이지 이탈 시 상태 초기화
-  useEffect(() => {
-    return () => {
-      // reset(); // 필요시 주석 해제
-    };
-  }, []);
+  const [generatedCreatives, setGeneratedCreatives] = useState<GeneratedCreative[]>([]);
 
-  // Step 1: 캠페인 생성 및 분석
-  const handleCampaignSubmit = async (data: CreateCampaignRequest) => {
-    setLoading(true);
+  // 스텝 네비게이션 핸들러
+  const handleNextStep = () => {
     setError(null);
-
-    try {
-      // 캠페인 생성
-      const campaignRes = await fetch('/api/campaigns', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const campaignData = await campaignRes.json();
-
-      if (!campaignData.success) {
-        throw new Error(campaignData.error);
-      }
-
-      setCampaign(campaignData.data as Campaign);
-
-      // 분석 실행 (고도화 심층 분석 사용)
-      const analyzeRes = await fetch(
-        `/api/campaigns/${campaignData.data.id}/analyze?deep=true`,
-        { method: 'POST' }
-      );
-      const analyzeData = await analyzeRes.json();
-
-      if (!analyzeData.success) {
-        throw new Error(analyzeData.error);
-      }
-
-      setAnalysis(analyzeData.data as Analysis);
-      nextStep(); // Step 2로 이동
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '오류가 발생했습니다');
-    } finally {
-      setLoading(false);
-    }
+    nextStep();
   };
 
-  // Step 2: 분석 확인 후 컨셉 생성
-  const handleAnalysisConfirm = async () => {
-    if (!campaign) return;
-
-    setLoading(true);
+  const handlePrevStep = () => {
     setError(null);
-
-    try {
-      // 고도화 컨셉 생성 (플랫폼별 최적화 포함)
-      const res = await fetch(`/api/campaigns/${campaign.id}/concepts?enhanced=true`, {
-        method: 'POST',
-      });
-      const data = await res.json();
-
-      if (!data.success) {
-        throw new Error(data.error);
-      }
-
-      setConcepts(data.data as Concept[]);
-      nextStep(); // Step 3으로 이동
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '오류가 발생했습니다');
-    } finally {
-      setLoading(false);
-    }
+    prevStep();
   };
 
-  // Step 3: 컨셉 선택 후 소재 생성
-  const handleConceptConfirm = async () => {
-    if (!selectedConcept || !campaign) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      // 컨셉 선택 API 호출
-      await fetch(`/api/concepts/${selectedConcept.id}/select`, {
-        method: 'PUT',
-      });
-
-      setStep(4); // Step 4 (생성 중)로 이동
-
-      // 소재 생성 API 호출 (고도화: 최적화 카피 + 품질 검증)
-      const res = await fetch(`/api/concepts/${selectedConcept.id}/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          platforms: campaign.platforms,
-          include_copy: true,
-          resolution: '2k',
-          variations: 2,
-          optimized_copy: true,    // 플랫폼 최적화 카피
-          validate_quality: true,  // 품질 검증 수행
-        }),
-      });
-      const data = await res.json();
-
-      if (!data.success) {
-        throw new Error(data.error);
-      }
-
-      setCreatives(data.data as Creative[]);
-      setStep(5); // Step 5 (결과)로 이동
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '오류가 발생했습니다');
-      setStep(3); // 에러 시 Step 3으로 복귀
-    } finally {
-      setLoading(false);
-    }
+  // 소재 생성 완료 핸들러
+  const handleCreativeComplete = (creatives: GeneratedCreative[]) => {
+    setGeneratedCreatives(creatives);
+    nextStep(); // Step 6으로 이동
   };
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b">
+      <header className="border-b sticky top-0 bg-background z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold">
-            Ad Creative Generator
+          <Link href="/" className="flex items-center gap-2">
+            <span className="text-2xl">🚀</span>
+            <span className="text-xl font-bold">Channel-First Ad Generator</span>
           </Link>
           <Button variant="ghost" onClick={reset}>
             처음부터 다시
@@ -177,6 +73,7 @@ export default function CreatePage() {
       {/* Progress */}
       <div className="border-b bg-muted/30">
         <div className="container mx-auto px-4 py-6">
+          {/* Step Indicators */}
           <div className="flex items-center justify-between mb-4">
             {STEPS.map((step, index) => (
               <div
@@ -186,34 +83,49 @@ export default function CreatePage() {
                 }`}
               >
                 <div
-                  className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-                    currentStep >= step.number
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground'
-                  }`}
+                  className={`
+                    flex items-center justify-center w-10 h-10 rounded-full text-lg
+                    transition-all duration-300
+                    ${
+                      currentStep > step.number
+                        ? 'bg-green-500 text-white'
+                        : currentStep === step.number
+                        ? 'bg-primary text-primary-foreground shadow-lg scale-110'
+                        : 'bg-muted text-muted-foreground'
+                    }
+                  `}
                 >
-                  {step.number}
+                  {currentStep > step.number ? '✓' : step.icon}
                 </div>
                 <span
-                  className={`ml-2 text-sm hidden sm:block ${
-                    currentStep >= step.number
-                      ? 'text-foreground'
-                      : 'text-muted-foreground'
-                  }`}
+                  className={`
+                    ml-2 text-sm hidden md:block font-medium
+                    ${
+                      currentStep >= step.number
+                        ? 'text-foreground'
+                        : 'text-muted-foreground'
+                    }
+                  `}
                 >
                   {step.title}
                 </span>
                 {index < STEPS.length - 1 && (
                   <div
-                    className={`flex-1 h-0.5 mx-4 ${
-                      currentStep > step.number ? 'bg-primary' : 'bg-muted'
-                    }`}
+                    className={`
+                      flex-1 h-1 mx-4 rounded-full transition-all duration-300
+                      ${currentStep > step.number ? 'bg-green-500' : 'bg-muted'}
+                    `}
                   />
                 )}
               </div>
             ))}
           </div>
-          <Progress value={(currentStep / STEPS.length) * 100} />
+
+          {/* Progress Bar */}
+          <Progress value={(currentStep / STEPS.length) * 100} className="h-2" />
+          <p className="text-sm text-muted-foreground mt-2 text-center">
+            {currentStep} / {STEPS.length} 단계
+          </p>
         </div>
       </div>
 
@@ -221,70 +133,74 @@ export default function CreatePage() {
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Error Display */}
         {error && (
-          <div className="mb-6 p-4 bg-destructive/10 text-destructive rounded-lg">
-            {error}
+          <div className="mb-6 p-4 bg-destructive/10 text-destructive rounded-lg flex items-center gap-2">
+            <span>⚠️</span>
+            <span>{error}</span>
+            <button
+              onClick={() => setError(null)}
+              className="ml-auto text-sm hover:underline"
+            >
+              닫기
+            </button>
           </div>
         )}
 
-        {/* Step 1: Campaign Form */}
+        {/* Step 1: Channel & Industry Selection */}
         {currentStep === 1 && (
-          <CampaignForm onSubmit={handleCampaignSubmit} />
+          <Step1ChannelSelect onNext={handleNextStep} />
         )}
 
-        {/* Step 2: Analysis Report */}
-        {currentStep === 2 && analysis && (
-          <div className="space-y-6">
-            <AnalysisReport analysis={analysis} />
-            <div className="flex gap-4">
-              <Button variant="outline" onClick={prevStep} className="flex-1">
-                이전
-              </Button>
-              <Button
-                onClick={handleAnalysisConfirm}
-                className="flex-1"
-                disabled={isLoading}
-              >
-                {isLoading ? '컨셉 생성 중...' : '컨셉 생성하기'}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Concept Selection */}
-        {currentStep === 3 && concepts.length > 0 && (
-          <div className="space-y-6">
-            <ConceptSelector
-              concepts={concepts}
-              selectedConcept={selectedConcept}
-              onSelect={selectConcept}
-              onConfirm={handleConceptConfirm}
-              isLoading={isLoading}
-            />
-            <Button variant="outline" onClick={prevStep} className="w-full">
-              이전
-            </Button>
-          </div>
-        )}
-
-        {/* Step 4: Generating */}
-        {currentStep === 4 && (
-          <div className="text-center py-16">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-6"></div>
-            <h2 className="text-2xl font-bold mb-2">소재 생성 중...</h2>
-            <p className="text-muted-foreground">
-              AI가 광고 소재를 생성하고 있습니다. 잠시만 기다려주세요.
-            </p>
-          </div>
-        )}
-
-        {/* Step 5: Results */}
-        {currentStep === 5 && creatives.length > 0 && campaign && (
-          <CreativeGallery
-            creatives={creatives}
-            platforms={campaign.platforms}
+        {/* Step 2: Channel Analysis */}
+        {currentStep === 2 && (
+          <Step2ChannelAnalysis
+            onNext={handleNextStep}
+            onPrev={handlePrevStep}
           />
         )}
+
+        {/* Step 3: Brand Information */}
+        {currentStep === 3 && (
+          <Step3BrandInfo
+            onNext={handleNextStep}
+            onPrev={handlePrevStep}
+          />
+        )}
+
+        {/* Step 4: Concept Selection */}
+        {currentStep === 4 && (
+          <Step4ConceptSelect
+            onNext={handleNextStep}
+            onPrev={handlePrevStep}
+          />
+        )}
+
+        {/* Step 5: Creative Generation */}
+        {currentStep === 5 && (
+          <Step5CreativeGenerate onComplete={handleCreativeComplete} />
+        )}
+
+        {/* Step 6: Results */}
+        {currentStep === 6 && generatedCreatives.length > 0 && (
+          <Step6Result creatives={generatedCreatives} />
+        )}
       </main>
+
+      {/* Footer */}
+      <footer className="border-t mt-auto">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <div>Channel-First Ad Generator v2.0</div>
+            <div className="flex items-center gap-4">
+              <Link href="/help" className="hover:text-foreground">
+                도움말
+              </Link>
+              <Link href="/feedback" className="hover:text-foreground">
+                피드백
+              </Link>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
